@@ -1,0 +1,12 @@
+*.pyc
+__pycache__
+checkpoints
+SSD_caffe_model
+SSD_pytorch_model
+data
+meta_data
+logs
+log
+output
+outputs
+pretrained_ckpt/*

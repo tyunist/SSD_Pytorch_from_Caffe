@@ -1,0 +1,4 @@
+classes= 4
+train=data/three_drones/train.txt
+valid=data/three_drones/valid.txt
+names=data/three_drones/classes.names

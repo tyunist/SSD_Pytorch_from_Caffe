@@ -1,0 +1,4 @@
+classes=20
+train=data/all_drones/all_drones_known_train.txt
+valid=data/all_drones/all_drones_known_val.txt
+names=data/all_drones/classes.names
