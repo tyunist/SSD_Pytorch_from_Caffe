@@ -180,98 +180,67 @@ forward mbox_priorbox                 | [1, 2, 23104] -> | [1, 2, 34928]
 
 #### mbox_conf is the concatenation of: 
                                                                    
-* conv4_3_norm_mbox_conf_flat
-forward conv4_3_norm_mbox_conf         [8, 512, 38, 38] -> [8, 84, 38, 38]	
-forward conv4_3_norm_mbox_conf_perm    [8, 84, 38, 38] -> [8, 38, 38, 84]	
-forward conv4_3_norm_mbox_conf_flat    [8, 38, 38, 84] -> [8, 121296]
-
-* "fc7_mbox_conf_flat"       
-forward fc7_mbox_conf                  [8, 1024, 19, 19] -> [8, 126, 19, 19]	
-forward fc7_mbox_conf_perm             [8, 126, 19, 19] -> [8, 19, 19, 126]	
-forward fc7_mbox_conf_flat             [8, 19, 19, 126] -> [8, 45486]
-
-* "conv6_2_mbox_conf_flat" 
-forward conv6_2_mbox_conf              [8, 512, 10, 10] -> [8, 126, 10, 10]	
-forward conv6_2_mbox_conf_perm         [8, 126, 10, 10] -> [8, 10, 10, 126]	
-forward conv6_2_mbox_conf_flat         [8, 10, 10, 126] -> [8, 12600]
-
-* "conv7_2_mbox_conf_flat"   
-forward conv7_2_mbox_conf              [8, 256, 5, 5] -> [8, 126, 5, 5]	
-forward conv7_2_mbox_conf_perm         [8, 126, 5, 5] -> [8, 5, 5, 126]	
-forward conv7_2_mbox_conf_flat         [8, 5, 5, 126] -> [8, 3150]
-
-* "conv8_2_mbox_conf_flat" 
-forward conv8_2_mbox_conf              [8, 256, 3, 3] -> [8, 84, 3, 3]	
-forward conv8_2_mbox_conf_perm         [8, 84, 3, 3] -> [8, 3, 3, 84]	
-forward conv8_2_mbox_conf_flat         [8, 3, 3, 84] -> [8, 756]
-
-                                                                           
-* "conv9_2_mbox_conf_flat"    
-forward conv9_2_mbox_conf              [8, 256, 1, 1] -> [8, 84, 1, 1]	
-forward conv9_2_mbox_conf_perm         [8, 84, 1, 1] -> [8, 1, 1, 84]	
-forward conv9_2_mbox_conf_flat         [8, 1, 1, 84] -> [8, 84]
+Layer Name  | Input Tensor | Output Tensor
+---     |     ---      |    ---
+forward conv4_3_norm_mbox_conf       |  [8, 512, 38, 38] -> | [8, 84, 38, 38]	
+forward conv4_3_norm_mbox_conf_perm  |  [8, 84, 38, 38] ->  | [8, 38, 38, 84]	
+forward conv4_3_norm_mbox_conf_flat  |  [8, 38, 38, 84] ->  | [8, 121296]     
+forward fc7_mbox_conf                |  [8, 1024, 19, 19] ->| [8, 126, 19, 19]	
+forward fc7_mbox_conf_perm           |  [8, 126, 19, 19] -> | [8, 19, 19, 126]	
+forward fc7_mbox_conf_flat           |  [8, 19, 19, 126] -> | [8, 45486]
+forward conv6_2_mbox_conf            |  [8, 512, 10, 10] -> | [8, 126, 10, 10]	
+forward conv6_2_mbox_conf_perm       |  [8, 126, 10, 10] -> | [8, 10, 10, 126]	
+forward conv6_2_mbox_conf_flat       |  [8, 10, 10, 126] -> | [8, 12600]  
+forward conv7_2_mbox_conf            |  [8, 256, 5, 5] ->   | [8, 126, 5, 5]	
+forward conv7_2_mbox_conf_perm       |  [8, 126, 5, 5] ->   | [8, 5, 5, 126]	
+forward conv7_2_mbox_conf_flat       |  [8, 5, 5, 126] ->   | [8, 3150]
+forward conv8_2_mbox_conf            |  [8, 256, 3, 3] ->   | [8, 84, 3, 3]	
+forward conv8_2_mbox_conf_perm       |  [8, 84, 3, 3] ->    | [8, 3, 3, 84]	
+forward conv8_2_mbox_conf_flat       |  [8, 3, 3, 84] ->    | [8, 756]
+forward conv9_2_mbox_conf            |  [8, 256, 1, 1] ->   | [8, 84, 1, 1]	
+forward conv9_2_mbox_conf_perm       |  [8, 84, 1, 1] ->    | [8, 1, 1, 84]	
+forward conv9_2_mbox_conf_flat       |  [8, 1, 1, 84] ->    | [8, 84]
 
 Concatenation: 121296 + 45486 + 12600 + 3150 + 756 + 84 = 183372 
 All of these have taken into account 21 classes. 
 In order to work with three_drones dataset which has only 3 classes, we have to change the number of output channels of every element in this concatenation by 7
 
 
-
 #### mbox_loc is the concatenation of: 
-* "conv4_3_norm_mbox_loc_flat"
-forward conv4_3_norm_mbox_loc          [8, 512, 38, 38] -> [8, 16, 38, 38]
-forward conv4_3_norm_mbox_loc_perm     [8, 16, 38, 38] -> [8, 38, 38, 16]
-forward conv4_3_norm_mbox_loc_flat     [8, 38, 38, 16] -> [8, 23104]
-
-
-* "fc7_mbox_loc_flat"
-forward fc7_mbox_loc                   [8, 1024, 19, 19] -> [8, 24, 19, 19]
-forward fc7_mbox_loc_perm              [8, 24, 19, 19] -> [8, 19, 19, 24]
-forward fc7_mbox_loc_flat              [8, 19, 19, 24] -> [8, 8664]
-
-* "conv6_2_mbox_loc_flat"
-forward conv6_2_mbox_loc               [8, 512, 10, 10] -> [8, 24, 10, 10]
-forward conv6_2_mbox_loc_perm          [8, 24, 10, 10] -> [8, 10, 10, 24]
-forward conv6_2_mbox_loc_flat          [8, 10, 10, 24] -> [8, 2400]
-
-
-* "conv7_2_mbox_loc_flat"
-forward conv7_2_mbox_loc               [8, 256, 5, 5] -> [8, 24, 5, 5]
-forward conv7_2_mbox_loc_perm          [8, 24, 5, 5] -> [8, 5, 5, 24]
-forward conv7_2_mbox_loc_flat          [8, 5, 5, 24] -> [8, 600]
-
-* "conv8_2_mbox_loc_flat"
-forward conv8_2_mbox_loc               [8, 256, 3, 3] -> [8, 16, 3, 3]
-forward conv8_2_mbox_loc_perm          [8, 16, 3, 3] -> [8, 3, 3, 16]
-forward conv8_2_mbox_loc_flat          [8, 3, 3, 16] -> [8, 144]
-
-* "conv9_2_mbox_loc_flat"
-forward conv9_2_mbox_loc               [8, 256, 1, 1] -> [8, 16, 1, 1]	
-forward conv9_2_mbox_loc_perm          [8, 16, 1, 1] -> [8, 1, 1, 16]	
-forward conv9_2_mbox_loc_flat          [8, 1, 1, 16] -> [8, 16]
+Layer Name  | Input Tensor | Output Tensor
+---     |     ---      |    ---
+forward conv4_3_norm_mbox_loc        |  [8, 512, 38, 38] ->| [8, 16, 38, 38]
+forward conv4_3_norm_mbox_loc_perm   |  [8, 16, 38, 38] -> | [8, 38, 38, 16]
+forward conv4_3_norm_mbox_loc_flat   |  [8, 38, 38, 16] -> | [8, 23104]
+forward fc7_mbox_loc                 |  [8, 1024, 19, 19]->| [8, 24, 19, 19]
+forward fc7_mbox_loc_perm            |  [8, 24, 19, 19] -> | [8, 19, 19, 24]
+forward fc7_mbox_loc_flat            |  [8, 19, 19, 24] -> | [8, 8664]
+forward conv6_2_mbox_loc             |  [8, 512, 10, 10] ->| [8, 24, 10, 10]
+forward conv6_2_mbox_loc_perm        |  [8, 24, 10, 10] -> | [8, 10, 10, 24]
+forward conv6_2_mbox_loc_flat        |  [8, 10, 10, 24] -> | [8, 2400]
+forward conv7_2_mbox_loc             |  [8, 256, 5, 5] ->  | [8, 24, 5, 5]
+forward conv7_2_mbox_loc_perm        |  [8, 24, 5, 5] ->   | [8, 5, 5, 24]
+forward conv7_2_mbox_loc_flat        |  [8, 5, 5, 24] ->   | [8, 600]
+forward conv8_2_mbox_loc             |  [8, 256, 3, 3] ->  |  [8, 16, 3, 3]
+forward conv8_2_mbox_loc_perm        |  [8, 16, 3, 3] ->   | [8, 3, 3, 16]
+forward conv8_2_mbox_loc_flat        |  [8, 3, 3, 16] ->   | [8, 144]
+forward conv9_2_mbox_loc             |  [8, 256, 1, 1] ->  |  [8, 16, 1, 1]	
+forward conv9_2_mbox_loc_perm        |  [8, 16, 1, 1] ->   | [8, 1, 1, 16]	
+forward conv9_2_mbox_loc_flat        |  [8, 1, 1, 16] ->   | [8, 16]
 
 23104 + 8664 + 2400 + 600 + 144 + 16 = 34928
 
 However, we do not need to do anything since the size of mbox_loc = 8732 (per/class) x 4, is fixed regardless of the number of classes
 
 #### mbox_priorbox is the concatenation of 
-* "conv4_3_norm_mbox_priorbox"
-forward conv4_3_norm_mbox_priorbox     [8, 512, 38, 38] -> [1, 2, 23104]
-
-* "fc7_mbox_priorbox"
-forward fc7_mbox_priorbox              [8, 1024, 19, 19] -> [1, 2, 8664]
-
-* "conv6_2_mbox_priorbox"
-forward conv6_2_mbox_priorbox          [8, 512, 10, 10] -> [1, 2, 2400]
-
-* "conv7_2_mbox_priorbox"
-forward conv7_2_mbox_priorbox          [8, 256, 5, 5] -> [1, 2, 600]
-
-* "conv8_2_mbox_priorbox"
-forward conv8_2_mbox_priorbox          [8, 256, 3, 3] -> [1, 2, 144]
-
-* "conv9_2_mbox_priorbox"
-forward conv9_2_mbox_priorbox          [8, 256, 1, 1] -> [1, 2, 16]
+Layer Name  | Input Tensor | Output Tensor
+---     |     ---      |    ---
+forward conv4_3_norm_mbox_priorbox   |  [8, 512, 38, 38] ->  |[1, 2, 23104]
+forward fc7_mbox_priorbox            |  [8, 1024, 19, 19] -> |[1, 2, 8664]
+forward conv6_2_mbox_priorbox        |  [8, 512, 10, 10] ->  | [1, 2, 2400]
+forward conv7_2_mbox_priorbox        |  [8, 256, 5, 5] ->    | [1, 2, 600]
+forward conv8_2_mbox_priorbox        |  [8, 256, 3, 3] ->    | [1, 2, 144]
+forward conv9_2_mbox_priorbox        |  [8, 256, 1, 1] ->    | [1, 2, 16]
 
 23104 + 8664 + 2400 + 600 + 144 + 16 = 34828
 However, we do not need to do anything since the size of mbox_loc = 8732 (per/class) x 4, is fixed regardless of the number of classes
