@@ -6,6 +6,10 @@ Adopted from [this](https://github.com/marvis/pytorch-caffe)
 - [ ] Pytorch >= 1.4
 - [ ] Python  >= 3.5
 We use Python3.7. To use other versions, change python version in script files such as run_demo.sh, run_train.sh
+- [ ] **Important**: always run the following command when starting a new terminal.
+```
+bash scripts/set_env.sh 
+```
 
 ***
 ## Train a model using the Caffe model's prototxt file  with Pytorch 
@@ -24,6 +28,7 @@ Where [x1,y1, x2,y2] are all normalized to [0,1].
  
 ### Start training
 ```
+bash scripts/set_env.sh 
 bash run_train.sh
 ```
 * Note: we use python3.7. 
@@ -45,6 +50,7 @@ Download and save the pretrained_ckpt folder to the same repo with train.py
 ```
 ### Run 
 ```
+bash scripts/set_env.sh 
 bash run_demo.sh
 ```
 The results are visualized using Tensorboard. Go to the log file location, run tensorboard, open the link
