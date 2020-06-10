@@ -89,10 +89,10 @@ Each layer in caffe will have a corresponding layer in pytorch.
 
 ### SSD300 Model structure
  
- Layer| Input Tensor | Output Tensor 
-    ---   |         ---    |        ---
+Layer| Input Tensor | Output Tensor
+---   |         ---    |        ---
 forward conv1_2                       | [8, 64, 300, 300] -> |[8, 64, 300, 300]    
-forward relu1_2                       | [8, 64, 300, 300] -> |[8, 64, 300, 300]
+ forward relu1_2                       | [8, 64, 300, 300] -> |[8, 64, 300, 300]
 forward pool1                         | [8, 64, 300, 300] -> |[8, 64, 150, 150]
 forward conv2_1                       | [8, 64, 150, 150] -> |[8, 128, 150, 150]
 forward relu2_1                       | [8, 128, 150, 150] ->| [8, 128, 150, 150]
