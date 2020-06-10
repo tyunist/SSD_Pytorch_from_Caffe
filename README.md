@@ -43,12 +43,18 @@ Download and save the pretrained_ckpt folder to the same repo with train.py
     --test_img_dir examples_images/three_drones/test_from_skydio_hd_ian_house \
 
 ```
-And run 
+### Run 
 ```
 bash run_demo.sh
 ```
 The results are visualized using Tensorboard. Go to the log file location, run tensorboard, open the link
 that is shown up to display predicted boxes.
+
+### Output Example
+
+<p align="center">
+  <img width="460" height="300" src="example_images/test_img.png">
+</p>
 
 ***
 ## SSD300 Caffe model structure (n=21 classes)
