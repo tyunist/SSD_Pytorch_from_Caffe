@@ -25,6 +25,16 @@ The second dimension of the tensor represents a box
 [batch_index, class_index, x1, y1, x2, y2]
 ```
 Where [x1,y1, x2,y2] are all normalized to [0,1].
+
+### Find the data statistics 
+```
+bash scripts/set_env.sh 
+bash scripts/run_find_data_stats.sh
+```
+This will return two types of stats 
+- [ ] Mean and Std of pixels in 3 channels RGB
+- [ ] Clusters of bounding boxes in the (w, h) format, 
+where w,h are normalized to image width and height
  
 ### Start training
 ```

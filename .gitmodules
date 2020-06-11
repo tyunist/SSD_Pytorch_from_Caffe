@@ -1,0 +1,3 @@
+[submodule "utils/kmeans-anchor-boxes"]
+	path = utils/kmeans-anchor-boxes
+	url = https://github.com/tyunist/kmeans-anchor-boxes.git
