@@ -524,8 +524,8 @@ class CaffeNet(nn.Module):
                 neg_mining = True
                 neg_pos = float(layer['multibox_loss_param']['neg_pos_ratio'])
                 neg_overlap = float(layer['multibox_loss_param']['neg_overlap'])
-                loc_weight= float(layer['multibox_loss_param']['local_weight'])
-                models[lname] = MultiBoxLoss(num_classes, overlap_threshold, prior_for_matching, bkg_label, neg_mining, neg_pos, neg_overlap, use_gpu=True, local_weight=local_weight)
+                loc_weight= float(layer['multibox_loss_param']['loc_weight'])
+                models[lname] = MultiBoxLoss(num_classes, overlap_threshold, prior_for_matching, bkg_label, neg_mining, neg_pos, neg_overlap, use_gpu=True, loc_weight=loc_weight)
                 blob_channels[tname] = 1
                 blob_width[tname] = 1
                 blob_height[tname] = 1
