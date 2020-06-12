@@ -70,9 +70,11 @@ class Trainer(object):
         
         # Get dataloader
         train_dataset = ListDataset(train_path, img_size=opt.img_size, augment=True,\
-                                        multiscale=opt.multiscale_training)
+                                        multiscale=opt.multiscale_training,\
+                                        square_make_type=opt.square_make_type)
         valid_dataset = ListDataset(valid_path, img_size=opt.img_size, augment=False, \
-                                        multiscale=False)
+                                        multiscale=False,\
+                                        square_make_type=opt.square_make_type)
 
         self.train_dataloader = torch.utils.data.DataLoader(
             train_dataset,
@@ -375,9 +377,10 @@ if __name__ == "__main__":
     parser.add_argument("--img_size", type=int, default=CROP_IMG_SIZE, help="size of each image dimension")
     parser.add_argument("--checkpoint_interval", type=int, default=1, help="interval between saving model weights")
     parser.add_argument("--evaluation_interval", type=int, default=1, help="interval evaluations on validation set")
-    parser.add_argument("--write_image_interval", type=int, default=500, help="interval writing images to tensorboard")
+    parser.add_argument("--write_image_interval", type=int, default=100, help="interval writing images to tensorboard")
     parser.add_argument("--compute_map", default=False, help="if True computes mAP every tenth batch")
     parser.add_argument("--multiscale_training", default=False, help="allow for multi-scale training")
+    parser.add_argument("--square_make_type", default='crop', help="How to make the input image have square shape", choices=['crop', 'pad'])
     parser.add_argument("--conf_thres", default=0.5, help="conf threshold", type=float)
     parser.add_argument("--nms_thres", default=0.5, help="nms threshold", type=float)
     parser.add_argument("--visdom", default='visdom', help="Use visdom to visualize or not", type=str)

@@ -1,6 +1,7 @@
 # Convert SSD Model from Caffe to Pytorch
 This tool aims to load caffe prototxt and weights directly in pytorch without explicitly converting model from caffe to pytorch.
 Adopted from [this](https://github.com/marvis/pytorch-caffe)
+
 ***
 ## Prerequisites:
 - [ ] Pytorch >= 1.4
@@ -25,6 +26,17 @@ The second dimension of the tensor represents a box
 [batch_index, class_index, x1, y1, x2, y2]
 ```
 Where [x1,y1, x2,y2] are all normalized to [0,1].
+
+### How to make the input image square 
+SSD takes a square image as the input. Therefore, we need to make arbitrary images square. To do this, by default, we use center-cropping. However, there is an option to use center-cropping. Do it by chaning 
+``` 
+    --square_make_type crop 
+```
+with 
+```
+    --square_make_type pad
+```
+in run_train.sh, run_demo.sh
 
 ### Find the data statistics 
 ```

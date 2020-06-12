@@ -66,7 +66,7 @@ class Tester(object):
         self.tf_bbox_colors = np.random.randn(self.num_classes,3)
         
         # Get folder dataloader
-        test_dataset = ImageFolder(test_path, img_size=opt.img_size)
+        test_dataset = ImageFolder(test_path, img_size=opt.img_size, square_make_type=opt.square_make_type)
 
 
         self.test_dataloader = torch.utils.data.DataLoader(
@@ -235,6 +235,7 @@ if __name__ == "__main__":
     parser.add_argument("--evaluation_interval", type=int, default=1, help="interval evaluations on validation set")
     parser.add_argument("--write_image_interval", type=int, default=500, help="interval writing images to tensorboard")
     parser.add_argument("--compute_map", default=False, help="if True computes mAP every tenth batch")
+    parser.add_argument("--square_make_type", default='crop', help="How to make the input image have square shape", choices=['crop', 'pad'])
     parser.add_argument("--conf_thres", default=0.5, help="conf threshold", type=float)
     parser.add_argument("--nms_thres", default=0.5, help="nms threshold", type=float)
     parser.add_argument("--visdom", default='visdom', help="Use visdom to visualize or not", type=str)

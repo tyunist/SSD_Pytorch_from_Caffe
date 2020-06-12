@@ -48,7 +48,8 @@ class DataStats(Trainer):
         
         # Get dataloader
         train_dataset = ListDataset(train_path, img_size=opt.img_size, augment=False,\
-                                        multiscale=False)
+                                   multiscale=False,\
+                                   square_make_type=opt.square_make_type)
         # Only shuffle the data to compute pixel mean
         is_shuffle = False if opt.stat_type == 'pixel_mean' else True
         self.train_dataloader = torch.utils.data.DataLoader(
@@ -68,6 +69,8 @@ class DataStats(Trainer):
         max_epochs  = 5
         for epoch in range(max_epochs):
             for batch_i, (_, imgs, targets) in enumerate(self.train_dataloader):
+                if batch_i > 10:
+                    break
                 # Note that targets is (N*num_boxes) x 6 where 
                 #   targets[i, 0] is the batch index
                 #   targets[i, 1] is the object id index (starting from 1)
@@ -170,7 +173,8 @@ if __name__ == "__main__":
     parser.add_argument("--checkname", type=str, default='', help="Subdir of checkpoints")
     parser.add_argument("--n_cpu", type=int, default=8, help="number of cpu threads to use during batch generation")
     parser.add_argument("--img_size", type=int, default=CROP_IMG_SIZE, help="size of each image dimension")
-    parser.add_argument("--write_image_interval", type=int, default=500, help="interval writing images to tensorboard")
+    parser.add_argument("--square_make_type", default='crop', help="How to make the input image have square shape", choices=['crop', 'pad'])
+    parser.add_argument("--write_image_interval", type=int, default=20, help="interval writing images to tensorboard")
     parser.add_argument("--visdom", default='visdom', help="Use visdom to visualize or not", type=str)
 
     args = parser.parse_args()

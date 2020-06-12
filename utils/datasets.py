@@ -11,8 +11,22 @@ from utils.augmentations import horisontal_flip
 from torch.utils.data import Dataset
 import torchvision.transforms as transforms
 from collections import defaultdict, OrderedDict, deque
+import pdb
 
-def pad_to_square(img, pad_value):
+
+def pad_to_square(*inputs):
+    '''
+    Inputs: 
+        img, pad_value in this order
+    '''
+    pad_value = 0
+    if len(inputs) == 2:
+        img = inputs[0]
+        pad_value = inputs[1]
+    elif len(inputs) == 1:
+        img = inputs[0]
+    else:
+        raise TypeError("Input to pad_to_square() must be: img, pad_value or img!")
     c, h, w = img.shape
     dim_diff = np.abs(h - w)
     # (upper / left) padding and (lower / right) padding
@@ -23,6 +37,35 @@ def pad_to_square(img, pad_value):
     img = F.pad(img, pad, "constant", value=pad_value)
 
     return img, pad
+
+def center_crop_to_square(*inputs):
+    '''
+    Inputs:
+        img 
+    Outputs:
+        cropped square image
+        crop: List[crop1, crop2, crop3, crop4]. Crop values are <= 0 
+              to differentiate a return from this center_crop_to_square() vs that of pad_to_square()
+    '''
+    img = inputs[0]
+
+    c, h, w = img.shape
+    dim_diff = np.abs(h - w)
+    # (upper / left) padding and (lower / right) padding
+    crop1, crop2 = dim_diff // 2, dim_diff - dim_diff // 2
+    # Determine padding
+    crop = [0, 0, crop1, crop2] if h <  w else [crop1, crop2, 0, 0]
+    
+    img  = img[:,crop[0]:h-crop[1], crop[2]:w-crop[3]]
+   
+    # Cropping change only left, upper coordinate 
+    #crop = [-c for c in crop]
+    crop = [-crop1, -crop2, 0, 0] if h < w else [0,0, -crop1, -crop2]
+    return img, crop 
+
+
+square_make_funcs = {'crop': center_crop_to_square,
+                     'pad': pad_to_square}
 
 
 def resize(image, size):
@@ -37,16 +80,20 @@ def random_resize(images, min_size=288, max_size=448):
 
 
 class ImageFolder(Dataset):
-    def __init__(self, folder_path, img_size=416):
+    def __init__(self, folder_path, img_size=416, square_make_type='pad'):
         self.files = sorted(glob.glob("%s/*.*" % folder_path))
         self.img_size = img_size
+        # How to make the image square: two options given in square_make_funcs{}
+        self.square_make_type = square_make_type
+        self.square_make_func = square_make_funcs[square_make_type]
+
 
     def __getitem__(self, index):
         img_path = self.files[index % len(self.files)]
         # Extract image as PyTorch tensor
         img = transforms.ToTensor()(Image.open(img_path))
         # Pad to square resolution
-        img, _ = pad_to_square(img, 0)
+        img, _ = self.square_make_func(img, 0)
         # Resize
         img = resize(img, self.img_size)
 
@@ -99,7 +146,11 @@ class OnlineLoader(object):
 
 
 class ListDataset(Dataset):
-    def __init__(self, list_path, img_size=416, augment=True, multiscale=True, normalized_labels=True):
+    def __init__(self, list_path, img_size=416, augment=True, multiscale=True, normalized_labels=True, square_make_type='pad'):
+        '''
+        Inputs:
+            square_make_type: how to enforce the square, either 'crop' or 'pad'
+        '''
         with open(list_path, "r") as file:
             self.img_files = file.readlines()
 
@@ -115,6 +166,10 @@ class ListDataset(Dataset):
         self.min_size = self.img_size - 1 * 32
         self.max_size = self.img_size + 4 * 32
         self.batch_count = 0
+        
+        # How to make the image square: two options given in square_make_funcs{}
+        self.square_make_type = square_make_type
+        self.square_make_func = square_make_funcs[square_make_type]
 
     def __getitem__(self, index):
         # ---------
@@ -135,10 +190,11 @@ class ListDataset(Dataset):
 
         _, h, w = img.shape
         h_factor, w_factor = (h, w) if self.normalized_labels else (1, 1)
-        # Pad to square resolution
-        img, pad = pad_to_square(img, 0)
+        # Pad/crop to square resolution
+        img, pad = self.square_make_func(img, 0) # call it pad but it can be crop 
+        #img, pad = pad_to_square(img, 0)
         _, padded_h, padded_w = img.shape
-        
+         
         # ---------
         #  Label
         # ---------
@@ -164,19 +220,44 @@ class ListDataset(Dataset):
             y1 += pad[2]
             x2 += pad[1]
             y2 += pad[3]
-            # Returns (cx, cy, w, h)
-            boxes[:, 1] = ((x1 + x2) / 2) / padded_w
-            boxes[:, 2] = ((y1 + y2) / 2) / padded_h
-            boxes[:, 3] *= w_factor / padded_w
-            boxes[:, 4] *= h_factor / padded_h
+            ## Returns (cx, cy, w, h)
+            #boxes[:, 1] = ((x1 + x2) / 2) / padded_w
+            #boxes[:, 2] = ((y1 + y2) / 2) / padded_h
+            #boxes[:, 3] *= w_factor / padded_w
+            #boxes[:, 4] *= h_factor / padded_h
 
-            targets = torch.zeros((len(boxes), 6))
-            targets[:, 1:] = boxes
+
+            #Returns (x1, y1, x2, y2)
+            boxes[:, 1] = torch.clamp(x1/float(padded_w), min=0.0, max=1.0)
+            boxes[:, 2] = torch.clamp(y1/float(padded_h), min=0.0, max=1.0)
+            boxes[:, 3] = torch.clamp(x2/float(padded_w), min=0.0, max=1.0)
+            boxes[:, 4] = torch.clamp(y2/float(padded_h), min=0.0, max=1.0)
+
+            # Get rid of invalid boxes which have zero area 
+            x2_le_x1_m = boxes[:, 3] < boxes[:,1] + 1e-4    #y1 < x1
+            y2_le_y1_m = boxes[:, 4] < boxes[:,2] + 1e-4    #y1 < x1
+
+            neg_mask = x2_le_x1_m + y2_le_y1_m 
+            neg_mask = neg_mask > 0 
+            pos_mask = neg_mask.logical_not() 
+
+            if pos_mask.sum() == 0:
+                targets = None 
+            else:
+                boxes = boxes[pos_mask]
+                # Return targets in cx, cy, w, h shape
+                b_only = boxes[:, 1:]
+                boxes[:,1:] = torch.cat([(b_only[:, 2:] + b_only[:, :2])/2,  # cx, cy
+                                          b_only[:, 2:] - b_only[:, :2]],\
+                                       1)  
+                if len(boxes.shape) == 1:
+                    boxes = boxes.unsqueeze(0)
+                targets = torch.zeros((len(boxes), 6))
+                targets[:, 1:] = boxes
             
-                
 
         # Apply augmentations
-        if self.augment:
+        if self.augment and targets is not None:
             if np.random.random() < 0.5:
                 img, targets = horisontal_flip(img, targets)
 
