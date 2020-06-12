@@ -60,8 +60,9 @@ class Tester(object):
 
         self.tboard_writer = PytorchTBWriter(opt, opt.log_dir)
         print(">> Save tboard logs to %s"%self.tboard_writer.log_dir)
-
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        
+        device = 'cuda' if (torch.cuda.is_available() and opt.GPUs) else 'cpu'
+        self.device = torch.device(device)
 
         # Get data configuration
         data_config = parse_data_config(opt.data_config)
@@ -125,7 +126,7 @@ class Tester(object):
         prev_time = time.time()
         img_paths = []  # Stores image paths
         img_detections = []  # Stores detections for each image index
-        for batch_i, (img_paths, imgs) in enumerate(self.test_dataloader):
+        for batch_i, (paths, imgs) in enumerate(self.test_dataloader):
             imgs    = Variable(imgs.to(self.device), requires_grad=False)
 
             # Turn on and off detection_out since it's very slow
@@ -138,6 +139,7 @@ class Tester(object):
             cur_time   = time.time() 
             infer_time = cur_time - prev_time  
             infer_time_2_display = datetime.timedelta(infer_time)
+            avg_inference_time.update(infer_time)
 
             str2Print="- Batch [%d/%d]| Infer time: %s[%.5f]s"%(batch_i, num_batches, infer_time_2_display,\
                                                                 avg_inference_time.avg)
@@ -153,7 +155,7 @@ class Tester(object):
                 detections = blobs[-1]      
             else:
                 detections = blobs      
-            if len(detections) == 1:
+            if len(detections.size()) == 1:
                 detections = detections.unsqueeze(0)
             
             assert detections.shape[1] == 7, "Detection out must be Nx7. This one is Nx%d"%detections.shape[1]
@@ -167,8 +169,9 @@ class Tester(object):
             self.visualize_batch(batch_i, imgs, detections, self.tboard_writer, msg='test/pred_batch', max_box_per_class=3)
 
             # Save image paths and detections
-            img_paths.extend(img_paths)
+            img_paths.append(paths)
             img_detections.append(detections.cpu())
+        
 
         # Save image detections 
         print("\n==================================\nSaving detections:")
@@ -177,30 +180,32 @@ class Tester(object):
         if not os.path.exists(out_dir):
             os.makedirs(out_dir)
         print("\n>> Save output detections to: %s"%out_dir)
-        # Iterate through images and save plot of detections
-        for img_i, (path, detections) in enumerate(zip(img_paths, img_detections)):
-            print("(%d) Image: '%s'" % (img_i, path))
 
-            img = cv.imread(path) 
-            if detections is not None:
-                # Convert detections of size N x 7, where the last dim: [batch_i, cls idx, score, x1, y1, x2, y2] 
-                # to [x1, y1, x2, y2, conf, cls_conf, cls_pred] for drawing
-                num         = detections.size(0)
+        # Iterate through images and save plot of detections
+        for batch_i, (b_paths, b_detections) in enumerate(zip(img_paths, img_detections)):
+            for img_i, path in enumerate(b_paths):
+                detections = b_detections[b_detections[:,0]==img_i]
+                print("(%d) Image: '%s'" % (img_i, path))
+
+                img = cv.imread(path) 
+                if detections is not None and torch.sum(detections) > 0:
+                    # Convert detections of size N x 7, where the last dim: [batch_i, cls idx, score, x1, y1, x2, y2] 
+                    # to [x1, y1, x2, y2, conf, cls_conf, cls_pred] for drawing
+                    num         = detections.size(0)
+                    
+                    detections  = torch.cat((self.img_size*detections[:,3:].view(num,4), # x1, y1, x2, y2
+                                        torch.ones([num, 1]), # fake cls_conf 
+                                        detections[:, 2].view(num,1), # conf
+                                        detections[:, 1].view(num,1), # cls_pred
+                                       ),-1)
+                    
+                    # Rescale boxes to original image
+                    detections = rescale_boxes(detections, self.opt.img_size, img.shape[:2])        
+                filename = path.split("/")[-1].split(".")[0]
+                savefig_name = f"{out_dir}/{filename}.png"
+                bbox_drawer.drawBboxes(img, detections, savefig_name)
                 
-                detections  = torch.cat((self.img_size*detections[:,3:].view(num,4), # x1, y1, x2, y2
-                                    torch.ones([num, 1]), # fake cls_conf 
-                                    detections[:, 2].view(num,1), # conf
-                                    detections[:, 1].view(num,1), # cls_pred
-                                   ),-1)
-                
-                # Rescale boxes to original image
-                detections = rescale_boxes(detections, self.opt.img_size, img.shape[:2])
-        
-            filename = path.split("/")[-1].split(".")[0]
-            savefig_name = f"{out_dir}/{filename}.png"
-            bbox_drawer.drawBboxes(img, detections, savefig_name)
-            
-            print(">> Save detection + img: %s"%(savefig_name)) 
+                print(">> Save detection + img: %s"%(savefig_name)) 
 
         print("===============================")
 
@@ -311,7 +316,6 @@ if __name__ == "__main__":
     
     # Logging
     logging, log_experiment_dir = get_logger(args)
-    pdb.set_trace()
     args.log_dir = log_experiment_dir
 
     print(args)
