@@ -163,7 +163,6 @@ class CaffeNet(nn.Module):
                     i = i + 1 
                     continue
 
-
             if self.forward_data_only:
                 break
             
@@ -174,6 +173,8 @@ class CaffeNet(nn.Module):
                 try:
                     tdatas = self._modules[lname](*bdatas)
                 except:
+                    #pdb.set_trace()
+                    #tdatas = self._modules[lname](*bdatas)
                     raise TypeError("Wrong shape")
                     print("Layer:",lname)
                     print("Module: ",self._modules[lname])

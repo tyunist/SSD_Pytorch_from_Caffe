@@ -1,12 +1,14 @@
 from __future__ import division
 
 from models.prototxt_to_pytorch import CaffeNet
-from utils.logger import *
+from utils.tensorboard_writers import PytorchTBWriter
+from utils.logger import get_logger
 from utils.utils import *
 from utils.datasets import *
 from utils.parse_config import *
 from utils.train_saver import Saver
 from utils.lr_scheduler import LR_Scheduler
+from utils.bbx import CvDrawBboxes
 #from test import evaluate
 
 from terminaltables import AsciiTable
@@ -16,6 +18,7 @@ import sys
 import time
 import datetime
 import argparse
+import cv2 as cv
 
 import torch
 from torch.utils.data import DataLoader
@@ -35,6 +38,9 @@ DATASET      = os.environ['DATASET']
 LOG_DIR_ROOT = os.environ['LOGDIR']
 CROP_IMG_SIZE= os.environ['CROP_IMG_SIZE']
 PRETRAINED_CKPT= None #os.environ['PRETRAINED_CKPT']
+# Original input image size
+INPUT_H      = os.environ['INPUT_H']
+INPUT_W      = os.environ['INPUT_W']
 
 class Tester(object):
     def __init__(self, **kwargs):
@@ -45,23 +51,23 @@ class Tester(object):
         self.opt = opt 
         self.batch_size  = opt.batch_size
         self.img_size    = opt.img_size
-        self.saver       = Saver(opt)
+        self.ckpt_saver  = Saver(opt)
         
         # Save parameters
-        self.saver.save_experiment_config({'args': opt})
+        self.ckpt_saver.save_experiment_config({'args': opt})
         print("====================================================")
-        print(">> Save params, weights to %s"%self.saver.experiment_dir)
+        print(">> Save params, weights to %s"%self.ckpt_saver.experiment_dir)
 
-        self.tboard_summary = PytorchLogger(opt)
-        print(">> Save tboard logs to %s"%self.tboard_summary.log_dir)
+        self.tboard_writer = PytorchTBWriter(opt, opt.log_dir)
+        print(">> Save tboard logs to %s"%self.tboard_writer.log_dir)
 
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
         # Get data configuration
         data_config = parse_data_config(opt.data_config)
         test_path = opt.test_img_dir
-        class_names = load_classes(data_config["names"])
-        self.num_classes = len(class_names)
+        self.class_names = load_classes(data_config["names"])
+        self.num_classes = len(self.class_names)
         # Colors for tensorboard visualization    
         self.tf_bbox_colors = np.random.randn(self.num_classes,3)
         
@@ -115,7 +121,11 @@ class Tester(object):
     def testing(self):
         self.model.eval()
         num_batches = len(self.test_dataloader)
-        for batch_i, (_, imgs) in enumerate(self.test_dataloader):
+        avg_inference_time = AverageMeter() 
+        prev_time = time.time()
+        img_paths = []  # Stores image paths
+        img_detections = []  # Stores detections for each image index
+        for batch_i, (img_paths, imgs) in enumerate(self.test_dataloader):
             imgs    = Variable(imgs.to(self.device), requires_grad=False)
 
             # Turn on and off detection_out since it's very slow
@@ -123,9 +133,15 @@ class Tester(object):
             self.model.set_eval_outputs('detection_out')
 
             with torch.no_grad():
-                blobs   = self.model(imgs)
+                blobs  = self.model(imgs)
+            
+            cur_time   = time.time() 
+            infer_time = cur_time - prev_time  
+            infer_time_2_display = datetime.timedelta(infer_time)
 
-            str2Print="- Batch [%d/%d]|"%(batch_i, num_batches)
+            str2Print="- Batch [%d/%d]| Infer time: %s[%.5f]s"%(batch_i, num_batches, infer_time_2_display,\
+                                                                avg_inference_time.avg)
+            prev_time  = cur_time 
             print(str2Print)
             logging.info(str2Print)
             
@@ -137,6 +153,8 @@ class Tester(object):
                 detections = blobs[-1]      
             else:
                 detections = blobs      
+            if len(detections) == 1:
+                detections = detections.unsqueeze(0)
             
             assert detections.shape[1] == 7, "Detection out must be Nx7. This one is Nx%d"%detections.shape[1]
             print(">> Number boxes per image: %.2f"%(detections.size(0)/float(self.batch_size)))
@@ -146,12 +164,48 @@ class Tester(object):
             detections[:, 3:][neg_mask2] = 0.99 
             #detections = torch.masked_select(detections, mask1)
             #detections = torch.masked_select(detections, mask2)
-            self.visualize_batch(batch_i, imgs, detections, self.tboard_summary, msg='test/pred_batch', max_box_per_class=3)
+            self.visualize_batch(batch_i, imgs, detections, self.tboard_writer, msg='test/pred_batch', max_box_per_class=3)
+
+            # Save image paths and detections
+            img_paths.extend(img_paths)
+            img_detections.append(detections.cpu())
+
+        # Save image detections 
+        print("\n==================================\nSaving detections:")
+        bbox_drawer = CvDrawBboxes(self.class_names, INPUT_H, INPUT_W)
+        out_dir     = os.path.join(self.opt.log_dir,  'detections', self.opt.test_img_dir.split('/')[-1])
+        if not os.path.exists(out_dir):
+            os.makedirs(out_dir)
+        print("\n>> Save output detections to: %s"%out_dir)
+        # Iterate through images and save plot of detections
+        for img_i, (path, detections) in enumerate(zip(img_paths, img_detections)):
+            print("(%d) Image: '%s'" % (img_i, path))
+
+            img = cv.imread(path) 
+            if detections is not None:
+                # Convert detections of size N x 7, where the last dim: [batch_i, cls idx, score, x1, y1, x2, y2] 
+                # to [x1, y1, x2, y2, conf, cls_conf, cls_pred] for drawing
+                num         = detections.size(0)
+                
+                detections  = torch.cat((self.img_size*detections[:,3:].view(num,4), # x1, y1, x2, y2
+                                    torch.ones([num, 1]), # fake cls_conf 
+                                    detections[:, 2].view(num,1), # conf
+                                    detections[:, 1].view(num,1), # cls_pred
+                                   ),-1)
+                
+                # Rescale boxes to original image
+                detections = rescale_boxes(detections, self.opt.img_size, img.shape[:2])
+        
+            filename = path.split("/")[-1].split(".")[0]
+            savefig_name = f"{out_dir}/{filename}.png"
+            bbox_drawer.drawBboxes(img, detections, savefig_name)
+            
+            print(">> Save detection + img: %s"%(savefig_name)) 
 
         print("===============================")
 
     
-    def visualize_batch(self, step, imgs, targets, tboard_summary, msg='train/gt', max_imgs=2, max_box_per_class=10):
+    def visualize_batch(self, step, imgs, targets, tboard_writer, msg='train/gt', max_imgs=2, max_box_per_class=10):
         '''Visualize ground truth bboxes
         Inputs:
             targets N x 6 
@@ -201,7 +255,7 @@ class Tester(object):
             for j in range(np_boxes.shape[1]):
                 colors[j] = self.tf_bbox_colors[int(labels[j])]
             tf_img = tf.image.draw_bounding_boxes(np_img, np_boxes, colors)
-            #with  tboard_summary.as_default():
+            #with  tboard_writer.as_default():
                 #tf.summary.image(msg, tf_img, step)
 
             draw_img = tf_img.numpy() 
@@ -209,7 +263,7 @@ class Tester(object):
             list_draw_imgs.append(draw_img[np.newaxis,...])
         
         stacked_draw_imgs = np.concatenate(list_draw_imgs, 0)
-        tboard_summary.add_images(msg, stacked_draw_imgs, step) 
+        tboard_writer.add_images(msg, stacked_draw_imgs, step) 
         #print(">> VISUAL TIME: ", time.time() - start_t)
     
         
@@ -241,8 +295,6 @@ if __name__ == "__main__":
     parser.add_argument("--visdom", default='visdom', help="Use visdom to visualize or not", type=str)
 
     args = parser.parse_args()
-    print(args)
-    tester = Tester(args=args)
 
     if torch.cuda.is_available():
         if args.GPUs:
@@ -256,6 +308,14 @@ if __name__ == "__main__":
     
     if args.GPUs:
         cudnn.benchmark = True 
+    
+    # Logging
+    logging, log_experiment_dir = get_logger(args)
+    pdb.set_trace()
+    args.log_dir = log_experiment_dir
+
+    print(args)
+    tester = Tester(args=args)
    
     # Start training 
     tester.testing()

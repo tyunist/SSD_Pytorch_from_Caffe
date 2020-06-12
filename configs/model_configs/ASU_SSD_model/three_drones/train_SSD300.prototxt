@@ -1458,7 +1458,7 @@ layer {
   multibox_loss_param {	
     loc_loss_type: SMOOTH_L1	
     conf_loss_type: SOFTMAX	
-    loc_weight: 1.0	
+    loc_weight: 3.0	
     num_classes: 4	
     share_location: true	
     match_type: PER_PREDICTION	

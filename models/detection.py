@@ -322,6 +322,7 @@ class Detection(nn.Module):
             conf_preds = conf_data.view(num, num_priors,
                                         self.num_classes).transpose(2, 1)
         
+        
         for i in range(num):
             decoded_boxes = decode(loc_data[i], prior_data, self.variance)
             #decoded_boxes: (tensor) xmin, ymin, xmax, ymax form of boxes.
@@ -353,8 +354,10 @@ class Detection(nn.Module):
                         #torch.cat((scores[ids[:count]].unsqueeze(1), \
                                    #boxes[ids[:count]]),1)
                 output.append(boxes)
-
-        output = torch.cat(output, 0) # B x 7
+        if len(output):
+            output = torch.cat(output, 0) # B x 7
+        else:
+            output = torch.zeros(1,7)
         print("------------------------------------------")
         print(">> Detection_output shape:", output.shape)
         print("------------------------------------------")
@@ -513,7 +516,7 @@ class MultiBoxLoss(nn.Module):
         N = num_pos.data.sum()
         loss_l /= N
         loss_c /= N
-        total_loss = loss_l*self.loss_l_weight + loss_c
+        total_loss = (loss_l*self.loss_l_weight + loss_c)/(self.loss_l_weight + 1)
         print(">>|total Loss %.4f |Loss_l %.4f|Loss_c %.4f"%(total_loss, loss_l, loss_c))
         return {'total_loss':total_loss,\
                 'loss_l':loss_l,\
