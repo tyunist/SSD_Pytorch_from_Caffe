@@ -81,7 +81,7 @@ that is shown up to display predicted boxes.
 ### Output Example
 
 <p align="center">
-  <img width="460" height="300" src="example_images/test_img.png">
+  <img width="920" height="300" src="example_images/val_example.png">
 </p>
 
 ***
