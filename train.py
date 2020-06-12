@@ -148,7 +148,7 @@ class Trainer(object):
         for batch_i, (_, imgs, targets) in enumerate(self.train_dataloader):
             # Note that targets is (N*num_boxes) x 6 where 
             #   targets[i, 0] is the batch index
-            #   targets[i, 1] is the object id index (starting from 0)
+            #   targets[i, 1] is the object id index (starting from 1)
             #   targets[i, 2:6] is the object bbox (normalized to [0, 1]), in cx,cy,wh format 
             batches_done = len(self.train_dataloader) * epoch + batch_i 
             self.scheduler(self.optimizer, batch_i, epoch, self.best_loss)
@@ -213,7 +213,7 @@ class Trainer(object):
         for batch_i, (_, imgs, targets) in enumerate(self.valid_dataloader):
             # Note that targets is (N*num_boxes) x 6 where 
             #   targets[i, 0] is the batch index
-            #   targets[i, 1] is the object id index (starting from 0)
+            #   targets[i, 1] is the object id index (starting from 1)
             #   targets[i, 2:6] is the object bbox (normalized to [0, 1]), in cx,cy,wh format 
             # Convert Darknet format to Pascal format 
             targets = darknet_2_pascal_targets(targets)
