@@ -393,8 +393,10 @@ class MultiBoxLoss(nn.Module):
     """
 
     def __init__(self, num_classes, overlap_thresh, prior_for_matching,
-                 bkg_label, neg_mining, neg_pos, neg_overlap, use_gpu=True):
+                 bkg_label, neg_mining, neg_pos, neg_overlap, use_gpu=True, local_weight=1.0):
         '''
+        Inputs:
+            local_weight: weight for loss_l
         '''
         super(MultiBoxLoss, self).__init__()
         self.use_gpu = use_gpu
@@ -406,6 +408,8 @@ class MultiBoxLoss(nn.Module):
         self.negpos_ratio = neg_pos
         self.neg_overlap = neg_overlap
         self.variance = [0.1, 0.2]
+        
+        self.loss_l_weight = local_weight
 
     def forward(self, loc_data, conf_data, priors, targets):
         """Multibox Loss
@@ -509,7 +513,7 @@ class MultiBoxLoss(nn.Module):
         N = num_pos.data.sum()
         loss_l /= N
         loss_c /= N
-        total_loss = loss_l + loss_c
+        total_loss = loss_l*self.loss_l_weight + loss_c
         print(">>|total Loss %.4f |Loss_l %.4f|Loss_c %.4f"%(total_loss, loss_l, loss_c))
         return {'total_loss':total_loss,\
                 'loss_l':loss_l,\

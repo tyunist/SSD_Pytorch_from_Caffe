@@ -164,7 +164,7 @@ class ListDataset(Dataset):
         self.multiscale = multiscale
         self.normalized_labels = normalized_labels
         self.min_size = self.img_size - 1 * 32
-        self.max_size = self.img_size + 4 * 32
+        self.max_size = self.img_size + 6 * 32
         self.batch_count = 0
         
         # How to make the image square: two options given in square_make_funcs{}

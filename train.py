@@ -109,7 +109,7 @@ class Trainer(object):
         pretrained_weights = self.opt.resume
         if not pretrained_weights:
             pretrained_weights = self.opt.pretrained_weights 
-        self.best_loss = 1e9
+        self.best_RMSE = 1e9
         if pretrained_weights:
             ckpt = torch.load(pretrained_weights)
             try:
@@ -125,10 +125,10 @@ class Trainer(object):
                 pass
 
             try:
-                self.optimizer.load_state_dict(ckpt['optimizer'])
-                self.best_loss = ckpt['best_loss']
+                #self.optimizer.load_state_dict(ckpt['optimizer'])
+                self.best_RMSE = ckpt['best_RMSE']
                 self.start_epoch = ckpt['epoch']
-                print("=> Loaded ckpt %s, epoch %d, loss = %.4f"%(pretrained_weights, self.start_epoch, self.best_loss))            
+                print("=> Loaded ckpt %s, epoch %d, loss = %.4f"%(pretrained_weights, self.start_epoch, self.best_RMSE))            
             except:
                 print("=> Loaded ckpt %s"%(pretrained_weights))            
 
@@ -153,7 +153,7 @@ class Trainer(object):
             #   targets[i, 1] is the object id index (starting from 1)
             #   targets[i, 2:6] is the object bbox (normalized to [0, 1]), in cx,cy,wh format 
             batches_done = len(self.train_dataloader) * epoch + batch_i 
-            self.scheduler(self.optimizer, batch_i, epoch, self.best_loss)
+            self.scheduler(self.optimizer, batch_i, epoch, self.best_RMSE)
             self.optimizer.zero_grad()
             
             #assert imgs.shape[2] == self.img_size, "Image size %d is not correct. Must be %d"%(imgs.shape[2], self.img_size)
@@ -274,7 +274,7 @@ class Trainer(object):
         self.tboard_summary.list_of_scalars_summary([('val/loss_c_epoch', epoch_loss_c)], epoch)         
             
         # Save model 
-        if epoch_val_loss < self.best_loss:
+        if epoch_val_loss < self.best_RMSE:
             is_best = True
             self.saver.save_checkpoint({
                                         'epoch': epoch,
@@ -288,8 +288,8 @@ class Trainer(object):
             logging.info(">> Saving model %s"%self.saver.ckpt_path)
         
         else:
-            print(">> Failed epoch since %.4f > %.4f!"%(epoch_val_loss, self.best_loss))
-            logging.info(">> Failed epoch since %.4f > %.4f!"%(epoch_val_loss, self.best_loss))
+            print(">> Failed epoch since %.4f > %.4f!"%(epoch_val_loss, self.best_RMSE))
+            logging.info(">> Failed epoch since %.4f > %.4f!"%(epoch_val_loss, self.best_RMSE))
 
     
     def visualize_batch(self, step, imgs, targets, tboard_summary, msg='train/gt', max_imgs=2, max_box_per_class=10):

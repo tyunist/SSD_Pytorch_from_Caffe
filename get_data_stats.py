@@ -10,7 +10,7 @@ import sys
 import time
 import datetime
 import argparse
-
+from tqdm import tqdm
 import torch
 from torch.utils.data import DataLoader
 from torchvision import datasets
@@ -50,14 +50,14 @@ class DataStats(Trainer):
         train_dataset = ListDataset(train_path, img_size=opt.img_size, augment=False,\
                                    multiscale=False,\
                                    square_make_type=opt.square_make_type)
-        # Only shuffle the data to compute pixel mean
-        is_shuffle = False if opt.stat_type == 'pixel_mean' else True
+        is_shuffle = True 
+        
         self.train_dataloader = torch.utils.data.DataLoader(
             train_dataset,
             batch_size=opt.batch_size,
             shuffle=is_shuffle,
             num_workers=opt.n_cpu,
-            pin_memory=True,
+            pin_memory=False,
             collate_fn=train_dataset.collate_fn,
         )
 
@@ -69,8 +69,6 @@ class DataStats(Trainer):
         max_epochs  = 5
         for epoch in range(max_epochs):
             for batch_i, (_, imgs, targets) in enumerate(self.train_dataloader):
-                if batch_i > 10:
-                    break
                 # Note that targets is (N*num_boxes) x 6 where 
                 #   targets[i, 0] is the batch index
                 #   targets[i, 1] is the object id index (starting from 1)
@@ -121,7 +119,8 @@ class DataStats(Trainer):
             if num_batches is None:
                 num_batches = len(self.train_dataloader)
             wh_bboxes   = [] 
-            for batch_i, (_, imgs, targets) in enumerate(self.train_dataloader):
+
+            for batch_i, (_, imgs, targets) in tqdm(enumerate(self.train_dataloader)):
                 if batch_i > num_batches:
                     break
                 # Note that targets is (N*num_boxes) x 6 where 
@@ -144,21 +143,41 @@ class DataStats(Trainer):
             print(wh_bboxes.shape)
             return wh_bboxes
         
-        data = load_dataset(is_debug=is_debug)
+        data = load_dataset(is_debug=is_debug, num_batches=500)
         assert len(data.shape) == 2 and data.shape[1] == 2, "Data has to be N x 2. But it is: %s"%data.shape.array_str()
         
         # Clustering
-        out = kmeans(data, k=n_clusters)
-        pdb.set_trace() 
-        str2log = "\n==============================\n"
-        str2log += "\nAccuracy: %.2f %%"%(avg_iou(data, out) * 100)
-        str2log += "\nBoxes (normalized):\n {}".format(out)
-        str2log += "\nBoxes (in pixels):\n {}".format(out*self.img_size)
+        accuracies = []
+        all_clusters = range(5,16)
+        for n_clusters in tqdm(all_clusters):
+            out = kmeans(data, k=n_clusters)
+            str2log = "\n==============================\n"
+            str2log += "n_clusters:%d"%n_clusters
+            acc = avg_iou(data, out) * 100
+            str2log += "\nAccuracy: %.2f %%"%(acc)
+            str2log += "\nBoxes (normalized):\n {}".format(out)
+            str2log += "\nBoxes (in pixels):\n {}".format(out*self.img_size)
 
-        ratios = np.around(out[:, 0] / out[:, 1], decimals=2).tolist()
-        str2log += "\nRatios:\n {}".format(sorted(ratios))
+            ratios = np.around(out[:, 0] / out[:, 1], decimals=2).tolist()
+            str2log += "\nRatios:\n {}".format(sorted(ratios))
+            print(str2log)
+            logging.info(str2log)
+            accuracies.append(acc)
+
+        plt.plot(all_clusters, accuracies, 'b-')
+        plt.xlabel('Number of n_clusters')
+        plt.ylabel('Accuracy [%]')
+        plt.show()
+        plt.savefig('acc_vs_n_clusters.jpg')
+        
+        str2log  = "\n==============================\n"
+        str2log += "Accuracies:"
         print(str2log)
-        logging.info(str2log)
+        print(accuracies)
+        
+        print("Number of clusters:")
+        print(all_clusters)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -181,15 +200,6 @@ if __name__ == "__main__":
     print(args)
     data_stats = DataStats(args=args)
 
-    if torch.cuda.is_available():
-        if args.GPUs:
-            torch.set_default_tensor_type('torch.cuda.FloatTensor')
-        if not args.GPUs:
-            print("WARNING: It looks like you have a CUDA device, but aren't " +
-		  "using CUDA.\nRun with --cuda for optimal training speed.")
-            torch.set_default_tensor_type('torch.FloatTensor')
-    else:
-        torch.set_default_tensor_type('torch.FloatTensor')
    
     assert args.stat_type, "Set args.state_type!"
 
