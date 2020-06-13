@@ -1486,7 +1486,7 @@ layer {
     share_location: true
     background_label_id: 0
     nms_param {
-      nms_threshold: 0.45
+      nms_threshold: 0.15
       top_k: 30
     }
     code_type: CENTER_SIZE

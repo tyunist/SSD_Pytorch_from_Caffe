@@ -123,7 +123,6 @@ class Tester(object):
         self.model.eval()
         num_batches = len(self.test_dataloader)
         avg_inference_time = AverageMeter() 
-        prev_time = time.time()
         img_paths = []  # Stores image paths
         img_detections = []  # Stores detections for each image index
         for batch_i, (paths, imgs) in enumerate(self.test_dataloader):
@@ -132,18 +131,17 @@ class Tester(object):
             # Turn on and off detection_out since it's very slow
             self.model.set_detection_output(True) 
             self.model.set_eval_outputs('detection_out')
+            prev_time  = time.time() 
 
             with torch.no_grad():
                 blobs  = self.model(imgs)
             
-            cur_time   = time.time() 
-            infer_time = cur_time - prev_time  
+            infer_time = time.time() - prev_time  
             infer_time_2_display = datetime.timedelta(infer_time)
             avg_inference_time.update(infer_time)
 
             str2Print="- Batch [%d/%d]| Infer time: %s[%.5f]s"%(batch_i, num_batches, infer_time_2_display,\
                                                                 avg_inference_time.avg)
-            prev_time  = cur_time 
             print(str2Print)
             logging.info(str2Print)
             

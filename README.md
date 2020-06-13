@@ -58,7 +58,7 @@ bash run_train.sh
 ***
 ## Test on images located in a folder
 ### Get the pretrained networks
-Pretrained model can be downloaded from [this link](https://drive.google.com/drive/folders/1fP9DXTmxrna_5vJyOA5pmvUO8uOq08Xn?usp=sharing)
+Pretrained model can be downloaded from [this v2](https://drive.google.com/drive/folders/1mhgPOiSk2hM5oje28-Gv8672856xbtie?usp=sharing)
 
 Download and save the pretrained_ckpt folder to the same repo with train.py
 
