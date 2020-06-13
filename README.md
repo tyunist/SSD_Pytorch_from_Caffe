@@ -17,7 +17,7 @@ bash scripts/set_env.sh
 ```
 Except python, all of these package requirements are given in docs_n_setups/package_requirements.txt and can be installed by running
 ```
-pip3 install -r docs_n_setups/package_requirements.txt
+bash scripts/set_env.sh 
 ```
 *Note: replace python3.7 in script/set_env.sh with your python version.
 
