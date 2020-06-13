@@ -828,7 +828,7 @@ layer {
     decay_mult: 0
   }
   convolution_param {
-    num_output: 24
+    num_output: 16
     pad: 1
     kernel_size: 3
     stride: 1
@@ -876,7 +876,7 @@ layer {
     decay_mult: 0
   }
   convolution_param {
-    num_output: 24
+    num_output: 16
     pad: 1
     kernel_size: 3
     stride: 1
@@ -919,9 +919,7 @@ layer {
   prior_box_param {
     min_size: 15.0
     max_size: 30.0
-    aspect_ratio: 1.5 
     aspect_ratio: 2 
-    aspect_ratio: 2.5 
     aspect_ratio: 3 
     flip: False 
     clip: false
@@ -947,7 +945,7 @@ layer {
     decay_mult: 0
   }
   convolution_param {
-    num_output: 20
+    num_output: 16
     pad: 1
     kernel_size: 3
     stride: 1
@@ -995,7 +993,7 @@ layer {
     decay_mult: 0
   }
   convolution_param {
-    num_output: 20
+    num_output: 16
     pad: 1
     kernel_size: 3
     stride: 1
@@ -1039,8 +1037,7 @@ layer {
     min_size: 30.0
     max_size: 60.0
     aspect_ratio: 1.5
-    aspect_ratio: 2
-    aspect_ratio: 2.5
+    aspect_ratio: 3
     flip: False 
     clip: false
     variance: 0.1
@@ -1155,7 +1152,7 @@ layer {
   top: "conv6_2_mbox_priorbox"
   prior_box_param {
     min_size: 60.0
-    max_size: 120.0
+    max_size: 90.0
     aspect_ratio: 1.5 
     aspect_ratio: 2
     flip: False 
@@ -1271,7 +1268,7 @@ layer {
   bottom: "data"
   top: "conv7_2_mbox_priorbox"
   prior_box_param {
-    min_size: 60.0
+    min_size: 90.0
     max_size: 120.0
     aspect_ratio: 1.5
     aspect_ratio: 2
@@ -1299,7 +1296,7 @@ layer {
     decay_mult: 0
   }
   convolution_param {
-    num_output: 16
+    num_output: 12
     pad: 1
     kernel_size: 3
     stride: 1
@@ -1347,7 +1344,7 @@ layer {
     decay_mult: 0
   }
   convolution_param {
-    num_output: 16
+    num_output: 12
     pad: 1
     kernel_size: 3
     stride: 1
@@ -1388,10 +1385,10 @@ layer {
   bottom: "data"
   top: "conv8_2_mbox_priorbox"
   prior_box_param {
-    min_size: 213.0
-    max_size: 264.0
+    min_size: 120.0
+    max_size: 150.0
     aspect_ratio: 2 
-    flip: true
+    flip: false 
     clip: false
     variance: 0.1
     variance: 0.1

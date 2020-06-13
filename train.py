@@ -288,6 +288,7 @@ class Trainer(object):
             print(">> Successful epoch!")
             print(">> Saving model %s"%self.ckpt_saver.ckpt_path)
             logging.info(">> Saving model %s"%self.ckpt_saver.ckpt_path)
+            self.best_RMSE = epoch_val_loss
         
         else:
             print(">> Failed epoch since %.4f > %.4f!"%(epoch_val_loss, self.best_RMSE))

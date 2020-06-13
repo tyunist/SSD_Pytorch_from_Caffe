@@ -37,7 +37,7 @@ DATA_CONFIG  = os.environ['DATA_CONFIG']
 DATASET      = os.environ['DATASET']
 LOG_DIR_ROOT = os.environ['LOGDIR']
 CROP_IMG_SIZE= os.environ['CROP_IMG_SIZE']
-PRETRAINED_CKPT= None #os.environ['PRETRAINED_CKPT']
+PRETRAINED_CKPT= os.environ['PRETRAINED_CKPT']
 # Original input image size
 INPUT_H      = os.environ['INPUT_H']
 INPUT_W      = os.environ['INPUT_W']
@@ -88,31 +88,25 @@ class Tester(object):
         self.model = CaffeNet(args.caffe_model_def).to(self.device) 
         self.model.apply(weights_init_normal)
         #print(self.model)
-
         #TODO: load the pretrained ckpt
-        pretrained_weights = self.opt.resume
+        pretrained_weights = self.opt.pretrained_weights 
         if not pretrained_weights:
-            pretrained_weights = self.opt.pretrained_weights 
-        if pretrained_weights:
-            ckpt = torch.load(pretrained_weights)
-            try:
-                if 'state_dict' in ckpt.keys():
-                    self.model.load_state_dict(ckpt['state_dict'])
-                    print("=> Loaded ckpt %s using ckpt['state_dict']!"%(pretrained_weights))            
-                else:
-                    self.model.load_state_dict(ckpt)
-                    print("=> Loaded ckpt %s using ckpt!"%(pretrained_weights))            
+            pretrained_weights = self.opt.resume
+        assert pretrained_weights, 'Need to provide pretrained weights via either --pretrained_weights or --resume'
+        ckpt = torch.load(pretrained_weights)
+        if 'state_dict' in ckpt.keys():
+            self.model.load_state_dict(ckpt['state_dict'])
+            print("=> Loaded ckpt %s using ckpt['state_dict']!"%(pretrained_weights))            
+        else:
+            self.model.load_state_dict(ckpt)
+            print("=> Loaded ckpt %s using ckpt!"%(pretrained_weights))            
 
-            except:
-                print("=> Loaded ckpt %s using ckpt['state_dict']/ckpt does not work!"%(pretrained_weights))            
-                pass
-
-            try:
-                self.best_loss = ckpt['best_loss']
-                self.start_epoch = ckpt['epoch']
-                print("=> Loaded ckpt %s, epoch %d, loss = %.4f"%(pretrained_weights, self.start_epoch, self.best_loss))            
-            except:
-                print("=> Loaded ckpt %s"%(pretrained_weights))            
+        try:
+            self.best_RMSE = ckpt['best_RMSE']
+            self.start_epoch = ckpt['epoch']
+            print("=> Loaded ckpt %s, epoch %d, loss = %.4f"%(pretrained_weights, self.start_epoch, self.best_RMSE))            
+        except:
+            print("=> Loaded ckpt %s"%(pretrained_weights))            
 
         # Set output
         self.model.set_verbose(False) # Turn of forward ... printing 
