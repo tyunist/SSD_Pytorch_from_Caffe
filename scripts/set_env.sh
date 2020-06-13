@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Install required packages
+python3.7 -m pip install --user -r docs_n_setups/package_requirements.txt 
+
 INPUT_CHANNELS=3
 NUM_CLASSES=19
 

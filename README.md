@@ -7,10 +7,19 @@ Adopted from [this](https://github.com/marvis/pytorch-caffe)
 - [ ] Pytorch >= 1.4
 - [ ] Python  >= 3.5
 We use Python3.7. To use other versions, change python version in script files such as run_demo.sh, run_train.sh
+- [ ] opencv >= 4.1
+```
+python3.7 -m pip3 install opencv-python==4.2.0.34
+``` 
 - [ ] **Important**: always run the following command when starting a new terminal.
 ```
 bash scripts/set_env.sh 
 ```
+Except python, all of these package requirements are given in docs_n_setups/package_requirements.txt and can be installed by running
+```
+pip3 install -r docs_n_setups/package_requirements.txt
+```
+*Note: replace python3.7 in script/set_env.sh with your python version.
 
 ***
 ## Train a model using the Caffe model's prototxt file  with Pytorch 

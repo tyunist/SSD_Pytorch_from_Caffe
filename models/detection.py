@@ -9,6 +9,7 @@ from torch.autograd import Function
 from torch.autograd import Variable
 import torch.nn.functional as F
 import pdb 
+import time 
 
 def point_form(boxes):
     """ Convert prior_boxes to (xmin, ymin, xmax, ymax)
@@ -191,6 +192,7 @@ def log_sum_exp(x):
 # Original author: Francisco Massa:
 # https://github.com/fmassa/object-detection.torch
 # Ported to PyTorch by Max deGroot (02/01/2017)
+
 def nms(boxes, scores, overlap=0.5, top_k=200):
     """Apply non-maximum suppression at test time to avoid detecting too many
     overlapping bounding boxes for a given object.
@@ -294,7 +296,6 @@ class Detection(nn.Module):
             where the last dim: [batch_i, cls idx, score, x1, y1, x2, y2] 
             with the range of x1,x2,y1,y2 is not so sure yet! 
         """
-
         num = loc.size(0)
         loc_data = loc.data
         conf_data = conf.data
@@ -322,7 +323,7 @@ class Detection(nn.Module):
             conf_preds = conf_data.view(num, num_priors,
                                         self.num_classes).transpose(2, 1)
         
-        
+
         for i in range(num):
             decoded_boxes = decode(loc_data[i], prior_data, self.variance)
             #decoded_boxes: (tensor) xmin, ymin, xmax, ymax form of boxes.

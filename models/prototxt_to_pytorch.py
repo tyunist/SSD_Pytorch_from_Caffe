@@ -170,8 +170,11 @@ class CaffeNet(nn.Module):
             bnames = bname if type(bname) == list else [bname]
             if True:
                 bdatas = [self.blobs[name] for name in bnames]
+                #import time 
+                #start_t = time.time()
                 try:
                     tdatas = self._modules[lname](*bdatas)
+                    #print("Layer\t%31s\tTime:\t%8.5f\ts"%(lname, time.time()-start_t))
                 except:
                     #pdb.set_trace()
                     #tdatas = self._modules[lname](*bdatas)

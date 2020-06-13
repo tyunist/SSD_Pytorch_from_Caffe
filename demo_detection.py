@@ -112,6 +112,13 @@ class Tester(object):
         self.model.set_verbose(False) # Turn of forward ... printing 
         self.model.set_eval_outputs('detection_out')
         self.model.set_forward_net_only(True) # Ignore Data, Annotated Data layer if exist
+
+    def get_net_profile(self):
+        x = torch.randn((1, 3, self.opt.img_size, self.opt.img_size), requires_grad=True)
+        with torch.autograd.profiler.profile(use_cuda=True) as prof:
+            self.model(x)
+        print(prof)
+        prof.export_chrome_trace("profile.html")
         
     def testing(self):
         self.model.eval()
@@ -120,6 +127,8 @@ class Tester(object):
         img_paths = []  # Stores image paths
         img_detections = []  # Stores detections for each image index
         for batch_i, (paths, imgs) in enumerate(self.test_dataloader):
+            if batch_i > 10:
+                break
             imgs    = Variable(imgs.to(self.device), requires_grad=False)
 
             # Turn on and off detection_out since it's very slow
@@ -315,6 +324,9 @@ if __name__ == "__main__":
    
     # Start training 
     tester.testing()
+    
+    # Profiling model
+    #tester.get_net_profile()
     
     
     
