@@ -96,7 +96,7 @@ that is shown up to display predicted boxes.
 ### Output Example
 
 <p align="center">
-  <img width="920" height="300" src="https://drive.google.com/file/d/1jhU87AV1nkczGCIpAA24omsSFV65z_Vq/view?usp=sharing">
+  <img width="920" height="300" src="example_images/demo_detection.gif">
 </p>
 
 ***
