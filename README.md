@@ -155,11 +155,11 @@ Ratios:
 Using these clusters, we modify the prior boxes as follows, 
 Layer name                  | Feature size | perceptive field (step) | No of priorboxes/feature | Scale Aspects | min size | max size
 ---                         |---           | ---                     | ---                      |---            |---       |---  
-conv4_3_norm_mbox_priorbox  |38x38  | 8  | 6 | 1.5, 2, 2.5, 3 | 015 | 30 | 
-fc7_mbox_priorbox           |19x19  | 16 | 5 | 1.5, 2, 2.5| 30 | 60
-conv6_2_mbox_priorbox       |10x10  | 32 | 4 | 1.5, 2     | 60 | 120
-conv7_2_mbox_priorbox       |05x05  | 64 | 3 | 1.5        | 120 | 200 
-conv8_2_mbox_priorbox       |03x03  | 100| 3 | 1.5        | 200 | 250 
+conv4_3_norm_mbox_priorbox  |38x38  | 8  | 6 | 2,   3     | 15  | 30 | 
+fc7_mbox_priorbox           |19x19  | 16 | 5 | 1.5, 3     | 30  | 60
+conv6_2_mbox_priorbox       |10x10  | 32 | 4 | 1.5, 2     | 60  | 90
+conv7_2_mbox_priorbox       |05x05  | 64 | 3 | 1.5        | 90  | 120 
+conv8_2_mbox_priorbox       |03x03  | 100| 3 | 1.5        | 120 | 150 
 conv9_2_mbox_priorbox       |01x01  | 300| 0 | 
 
 Turn off flip option => each feature will have
@@ -172,38 +172,40 @@ We have to compute the number of output for the following layers
 * 
 conv4_3_norm_mbox_loc 
 conv4_3_norm_mbox_conf 
-Size of output of conv4_3_norm_mbox_priorbox is 34656 = 38x38x6x4
+Size of output of conv4_3_norm_mbox_priorbox is 23104 = 38x38x4x4
 -> convolution_param { num_output: =
-38x38x6x4/(38x38) = 24 
+23104/(38x38) = 16
 
 * 
 fc7_mbox_loc
 fc7_mbox_conf
-Size of output of fc7_mbox_priorbox  is 7220 = 19x19x5x4
+Size of output of fc7_mbox_priorbox is 5776 = 19x19x4x4
 -> convolution_param { num_output: =
-19x19x5x4/(19x19) = 20 
+5776/(19x19) = 16 
 
 *
 conv6_2_mbox_loc
 conv6_2_mbox_conf 
 
-Size of output of conv6_2_mbox_priorbox  is 1600 = 10x10x4x4
+Size of output of conv6_2_mbox_priorbox is 1600 = 10x10x4x4
 -> convolution_param { num_output: = 
-10x10x4x4/(10x10) = 16 
+1600/(10x10) = 16 
 
 * 
 conv7_2_mbox_loc
 conv7_2_mbox_conf
 Size of output of conv7_2_mbox_priorbox is 400 = 5x5x4x4
 -> convolution_param { num_output: = 
-5x5x4x4/(5x5) = 16 
+400/(5x5) = 16 
 
 * 
 conv8_2_mbox_loc
 conv8_2_mbox_conf
-Size of output of conv8_2_mbox_priorbox is 144 = 3x3x4x4
+Size of output of conv8_2_mbox_priorbox is 108 = 3x3x3x4
 -> convolution_param { num_output: = 
-3x3x4x4/(3x3) = 16 
+108/(3x3) = 12 
+
+Total number of prior boxes: 23104 + 5776 + 1600 + 400 + 108 = 30988
 
 
 ***
