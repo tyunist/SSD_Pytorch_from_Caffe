@@ -15,7 +15,7 @@ python3.7 -m pip3 install opencv-python==4.2.0.34
 ```
 bash scripts/set_env.sh 
 ```
-Except python, all of these package requirements are given in docs_n_setups/package_requirements.txt and can be installed by running
+Except python, all of the afforementioned package requirements are given in docs_n_setups/package_requirements.txt and can be installed by running
 ```
 bash scripts/set_env.sh 
 ```
@@ -56,24 +56,77 @@ This will return two types of stats
 - [ ] Mean and Std of pixels in 3 channels RGB
 - [ ] Clusters of bounding boxes in the (w, h) format, 
 where w,h are normalized to image width and height
- 
-### Start training
+
+### Create the data configuration file
+```
+vi configs/data_configs/<name_of_the_data_config_file>.data
+``` 
+This file consists of file-list file, number of classes and the file that specifies class names 
+```
+classes= 4 # Number of classes. Note this is = number of actual classes + 1 (background)
+train=data/three_drones/train.txt # Training file-list file
+valid=data/three_drones/valid.txt
+names=data/three_drones/classes.names # Name of classes
+```
+The classes.names specifies the name of classes i.e.
+```
+background
+mavic_pro
+autel
+fla_450
+```
+
+### Three-drone dataset
+[This dataset](https://drive.google.com/drive/folders/1H4_ww2eAXwwE9--u_BIDT6OMl5eacCvA?usp=sharing) consists of synthetic and real images that feature 3 drones: mavic_pro, autel, and fla_450.
+Note: after downloading, unzip all compressed files. 
+
+#### Synthetic data
+Images + labels:
+- [ ] train=data/three_drones/train
+- [ ] valid=data/three_drones/valid
+
+File-list file:
+- [ ] train=data/three_drones/train.txt
+- [ ] valid=data/three_drones/valid.txt
+
+#### Real data
+Images + labels:
+- [ ] train=data/three_drones/cleaned_real_train
+- [ ] valid=data/three_drones/cleaned_real_valid
+- [ ] test=data/three_drones/cleaned_real_test
+
+File-list file:
+- [ ] train=data/three_drones/cleaned_real_train.txt
+- [ ] valid=data/three_drones/cleaned_real_valid.txt
+- [ ] test=data/three_drones/cleaned_real_test.txt
+
+### Start training with the synthetic data
 ```
 bash scripts/set_env.sh 
 bash run_train.sh
 ```
 * Note: we use python3.7. 
 
+### Finetune with the real data
+```
+bash scripts/set_env.sh 
+bash run_finetune.sh
+```
+* Note: we use python3.7. 
+
 ***
 ## Test on images located in a folder
 ### Get the pretrained networks
-Pretrained model can be downloaded from [this v3](https://drive.google.com/drive/folders/1YacrogksZIh95Xpj8_b3MDtBuGxMXld_?usp=sharing)
+Pretrained model can be downloaded from [this v4](https://drive.google.com/drive/folders/1zX2PSJG4_4u-DIvz7uV2e2I81FYEz49D?usp=sharing)
+In this version, we finetune the pretrained model [v3](https://drive.google.com/drive/folders/1YacrogksZIh95Xpj8_b3MDtBuGxMXld_?usp=sharing)
+with real data.
 
-Older versions:
+Older versions: 
+* [v3](https://drive.google.com/drive/folders/1YacrogksZIh95Xpj8_b3MDtBuGxMXld_?usp=sharing)
 * [v2](https://drive.google.com/drive/folders/1mhgPOiSk2hM5oje28-Gv8672856xbtie?usp=sharing)
 * [v1](https://drive.google.com/drive/folders/1fP9DXTmxrna_5vJyOA5pmvUO8uOq08Xn?usp=sharing)
 
-
+Note that these pretrained models are tightened to different versions of this code repo. 
 
 Download and save the pretrained_ckpt folder to the same repo with train.py
 

@@ -1483,11 +1483,11 @@ layer {
     share_location: true
     background_label_id: 0
     nms_param {
-      nms_threshold: 0.15
+      nms_threshold: 0.45
       top_k: 30
     }
     code_type: CENTER_SIZE
     keep_top_k: 10
-    confidence_threshold: 0.01
+    confidence_threshold: 0.1
   }
 }
