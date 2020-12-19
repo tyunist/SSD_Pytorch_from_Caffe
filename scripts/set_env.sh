@@ -6,7 +6,9 @@ python3.7 -m pip install --user -r docs_n_setups/package_requirements.txt
 INPUT_CHANNELS=3
 NUM_CLASSES=19
 
+# Three config files for train, test and demo (no loss computation)
 TRAIN_MODEL_DEF_CONFIG='configs/model_configs/ASU_SSD_model/three_drones/train_SSD300.prototxt'
+TEST_MODEL_DEF_CONFIG='configs/model_configs/ASU_SSD_model/three_drones/test_SSD300.prototxt'
 DEPLOY_MODEL_DEF_CONFIG='configs/model_configs/ASU_SSD_model/three_drones/deploy_SSD300.prototxt'
 PRETRAINED_CKPT='pretrained_ckpt/best_checkpoint.pth.tar'
 DATA_CONFIG_PREFIX='configs/data_configs'
@@ -95,6 +97,7 @@ export NUM_CLASSES=${NUM_CLASSES}
 export INPUT_CHANNELS=${INPUT_CHANNELS}
 export TRAIN_MODEL_DEF=${HOMEDIR}/${TRAIN_MODEL_DEF_CONFIG}
 export DEPLOY_MODEL_DEF=${HOMEDIR}/${DEPLOY_MODEL_DEF_CONFIG}
+export TEST_MODEL_DEF=${HOMEDIR}/${TEST_MODEL_DEF_CONFIG}
 export DATA_CONFIG=${HOMEDIR}/${DATA_CONFIG_PREFIX}/${DATASET}.data
 export PRETRAINED_CKPT=${HOMEDIR}/${PRETRAINED_CKPT}
 
@@ -108,7 +111,7 @@ echo "Set CROP_IMG_SIZE as ${CROP_IMG_SIZE}"
 echo "Set NUM_CLASSES as ${NUM_CLASSES}"
 echo "Set INPUT_CHANNELS as ${INPUT_CHANNELS}"
 echo "Set TRAIN_MODEL_DEF as ${TRAIN_MODEL_DEF}"
-echo "Set DEPLOY_MODEL_DEF as ${DEPLOY_MODEL_DEF}"
+echo "Set TEST_MODEL_DEF as ${TEST_MODEL_DEF}"
 echo "Set PRETRAINED_CKPT as ${PRETRAINED_CKPT}"
 echo "Set DATA_CONFIG as ${DATA_CONFIG}"
 

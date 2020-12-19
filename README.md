@@ -138,13 +138,37 @@ Download and save the pretrained_ckpt folder to the same repo with train.py
     --test_img_dir examples_images/three_drones/test_from_skydio_hd_ian_house \
 
 ```
-### Run 
+### Run demo using images given from a folder (no label needs to be given) 
 ```
 bash scripts/set_env.sh 
 bash run_demo.sh
 ```
 The results are visualized using Tensorboard. Go to the log file location, run tensorboard, open the link
 that is shown up to display predicted boxes.
+
+### Run test using images given from a folder + a file that contains a list of image files with labels  
+Edit the run_test.sh file with the following arguments:
+```
+    # Batch size
+    --batch_size 2\
+    # How to convert the raw input image -> 300 x 300
+    --square_make_type pad\
+    # Subdirectory to log the output
+    --checkname TEST_SSD300\
+    # The filelist file that contains the list of input image files + label files
+    --test_filelist_file data/three_drones/cleaned_real_test.txt\
+    # Pretrained model
+    --pretrained_weights meta_data/checkpoints/three_drones/FINETUNE_SSD300/experiment_0/best_checkpoint.pth.tar \
+```
+
+And run 
+```
+bash scripts/set_env.sh 
+bash run_test.sh
+```
+The results are visualized using Tensorboard. Go to the log file location, run tensorboard, open the link
+that is shown up to display predicted boxes.
+
 
 ### Output Example
 

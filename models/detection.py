@@ -470,7 +470,6 @@ class MultiBoxLoss(nn.Module):
         # Localization Loss (Smooth L1)
         # Shape: [batch,num_priors,4]
         pos_idx = pos.unsqueeze(pos.dim()).expand_as(loc_data)
-        
         # Predicted boxes in a an encoded format (def encode() function)
         loc_p = loc_data[pos_idx].view(-1, 4)
         
@@ -509,9 +508,12 @@ class MultiBoxLoss(nn.Module):
         conf_p = conf_data[(pos_mask+neg_mask).gt(0)].view(-1, self.num_classes)
         # Corresponding gt boxes 
         targets_weighted = conf_t[(pos+neg).gt(0)]
-
-        loss_c = F.cross_entropy(conf_p, targets_weighted, size_average=False)
-
+        
+        # Let loss_c = inf if there is no positive and negative
+        if(num_pos.sum() > 0):
+            loss_c = F.cross_entropy(conf_p, targets_weighted, size_average=False)
+        else:
+            loss_c = torch.tensor(float('inf'))
         # Sum of losses: L(x,c,l,g) = (Lconf(x, c) + ¦Áloc(x,l,g)) / N
 
         N = num_pos.data.sum()

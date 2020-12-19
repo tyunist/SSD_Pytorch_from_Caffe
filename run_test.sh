@@ -1,8 +1,8 @@
- python3.7 demo_detection.py \
+python3.7 test.py \
     --batch_size 2\
     --square_make_type pad\
-    --checkname DEMO_SSD300\
-    --test_img_dir data/three_drones/cleaned_real_test/Images\
+    --checkname TEST_SSD300\
+    --test_filelist_file data/three_drones/cleaned_real_test.txt\
     --pretrained_weights meta_data/checkpoints/three_drones/FINETUNE_SSD300/experiment_0/best_checkpoint.pth.tar \
     #--pretrained_weights pretrained_ckpt/best_checkpoint.pth.tar \
 

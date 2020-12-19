@@ -367,6 +367,7 @@ class PriorBox(nn.Module):
         # back to torch land
         output1 = torch.Tensor(mean).view(-1, 4)
         output2 = torch.FloatTensor(self.variances).view(1,4).expand_as(output1)
+        output2 = output2.to(output1.device)
         if self.clip:
             output1.clamp_(max=1, min=0)
         output1 = output1.view(1,1,-1)

@@ -7,7 +7,6 @@ from utils.utils import *
 from utils.datasets import *
 from utils.parse_config import *
 from utils.train_saver import Saver
-from utils.lr_scheduler import LR_Scheduler
 from utils.bbx import CvDrawBboxes
 #from test import evaluate
 
@@ -42,25 +41,19 @@ PRETRAINED_CKPT= os.environ['PRETRAINED_CKPT']
 INPUT_H      = os.environ['INPUT_H']
 INPUT_W      = os.environ['INPUT_W']
 
-class Tester(object):
+class Detector(object):
     def __init__(self, **kwargs):
-        # Fix random seed
-        np.random.seed(args.seed)
-        torch.manual_seed(args.seed)
         opt = kwargs.get("args")
+        # Fix random seed
+        np.random.seed(opt.seed)
+        torch.manual_seed(opt.seed)
         self.opt = opt 
         self.batch_size  = opt.batch_size
         self.img_size    = opt.img_size
-        self.ckpt_saver  = Saver(opt)
         
-        # Save parameters
-        self.ckpt_saver.save_experiment_config({'args': opt})
-        print("====================================================")
-        print(">> Save params, weights to %s"%self.ckpt_saver.experiment_dir)
 
         self.tboard_writer = PytorchTBWriter(opt, opt.log_dir)
         print(">> Save tboard logs to %s"%self.tboard_writer.log_dir)
-        
         device = 'cuda' if (torch.cuda.is_available() and opt.GPUs) else 'cpu'
         self.device = torch.device(device)
 
@@ -85,10 +78,10 @@ class Tester(object):
         )
    
         # Define model 
-        self.model = CaffeNet(args.caffe_model_def).to(self.device) 
+        self.model = CaffeNet(self.opt.caffe_model_def).to(self.device) 
         self.model.apply(weights_init_normal)
         #print(self.model)
-        #TODO: load the pretrained ckpt
+        # Load the pretrained ckpt
         pretrained_weights = self.opt.pretrained_weights 
         if not pretrained_weights:
             pretrained_weights = self.opt.resume
@@ -120,15 +113,13 @@ class Tester(object):
         print(prof)
         prof.export_chrome_trace("profile.html")
         
-    def testing(self):
+    def detecting(self):
         self.model.eval()
         num_batches = len(self.test_dataloader)
         avg_inference_time = AverageMeter() 
         img_paths = []  # Stores image paths
         img_detections = []  # Stores detections for each image index
         for batch_i, (paths, imgs) in enumerate(self.test_dataloader):
-            if batch_i > 10:
-                break
             imgs    = Variable(imgs.to(self.device), requires_grad=False)
 
             # Turn on and off detection_out since it's very slow
@@ -172,8 +163,12 @@ class Tester(object):
             # Save image paths and detections
             img_paths.append(paths)
             img_detections.append(detections.cpu())
-        
+      
+        # Save visualization of detections 
+        self.save_detection_visualization(img_paths, img_detections) 
 
+
+    def save_detection_visualization(self, img_paths, img_detections):
         # Save image detections 
         print("\n==================================\nSaving detections:")
         bbox_drawer = CvDrawBboxes(self.class_names, INPUT_H, INPUT_W)
@@ -187,15 +182,14 @@ class Tester(object):
             for img_i, path in enumerate(b_paths):
                 detections = b_detections[b_detections[:,0]==img_i]
                 print("(%d) Image: '%s'" % (img_i, path))
-
+    
                 img = cv.imread(path) 
                 if detections is not None and torch.sum(detections) > 0:
                     # Convert detections of size N x 7, where the last dim: [batch_i, cls idx, score, x1, y1, x2, y2] 
                     # to [x1, y1, x2, y2, conf, cls_conf, cls_pred] for drawing
                     num         = detections.size(0)
-                    
                     detections  = torch.cat((self.img_size*detections[:,3:].view(num,4), # x1, y1, x2, y2
-                                        torch.ones([num, 1]), # fake cls_conf 
+                                        torch.ones([num, 1]).cpu(), # fake cls_conf 
                                         detections[:, 2].view(num,1), # conf
                                         detections[:, 1].view(num,1), # cls_pred
                                        ),-1)
@@ -277,9 +271,7 @@ class Tester(object):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--seed", type=int, default=0, help="Random seed")
-    parser.add_argument("--GPUs", type=int, default=0, help="GPU ID")
-    parser.add_argument("--lr", type=float, default=1e-3, help="learning rate")
-    parser.add_argument('--lr_scheduler', type=str, default='step', choices=['poly', 'step', 'cos'])
+    parser.add_argument("--GPUs", type=str, default='0', help="GPU ID")
     parser.add_argument("--dataset", type=str, default=DATASET, help="Name of the dataset")
     parser.add_argument("--batch_size", type=int, default=32, help="size of each image batch")
     parser.add_argument("--caffe_model_def", type=str, default=DEPLOY_MODEL_DEF, help="path to caffe model definition file (prototxt)")
@@ -320,13 +312,13 @@ if __name__ == "__main__":
     args.log_dir = log_experiment_dir
 
     print(args)
-    tester = Tester(args=args)
+    detector = Detector(args=args)
    
-    # Start training 
-    tester.testing()
+    # Start detecting 
+    detector.detecting()
     
     # Profiling model
-    #tester.get_net_profile()
+    #detector.get_net_profile()
     
     
     

@@ -362,7 +362,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--epochs", type=int, default=100, help="number of epochs")
     parser.add_argument("--seed", type=int, default=0, help="Random seed")
-    parser.add_argument("--GPUs", type=int, default=0, help="GPU ID")
+    parser.add_argument("--GPUs", type=str, default='0', help="GPU ID")
     parser.add_argument("--lr", type=float, default=1e-3, help="learning rate")
     parser.add_argument('--lr_scheduler', type=str, default='step', choices=['poly', 'step', 'cos'])
     parser.add_argument("--start_epoch", type=int, default=0, help="start epoch (in case retrain/resume)")
