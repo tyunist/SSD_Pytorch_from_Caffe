@@ -177,21 +177,42 @@ def compute_ap(recall, precision):
 
 
 def get_batch_statistics(outputs, targets, iou_threshold):
-    """ Compute true positives, predicted scores and predicted labels per sample """
+    """ Compute true positives, predicted scores and predicted labels per sample 
+    Inputs: 
+        outputs: N x 7, 
+            where outputs[:, 3:7]: bbox in x1y1x2y2 format
+                  outputs[:, 2] : pred_score (scalar)
+                  outputs[:, 1] : label 
+                  outputs[:, 0] : index within a batch 
+        targets: N x 6,
+            where targets[:, 0] : index within a batch
+                  targets[:, 1] : label (scalar) 
+                  targets[:, 2:6] bbox in x1y1x2y2 format
+    Return:
+        batch_metrics (List[List[List, List, List]]),
+            Each element is a list of:
+                List[0] (N,): indication of true positives, values in {0, 1}
+                List[1] (N,): scores, values in [0,1]
+                List[2] (N,): labels, values in range(0, num_classes)
+    
+    """
     batch_metrics = []
-    for sample_i in range(len(outputs)):
-
-        if outputs[sample_i] is None:
-            continue
-
-        output = outputs[sample_i]
-        pred_boxes = output[:, :4]
-        pred_scores = output[:, 4]
-        pred_labels = output[:, -1]
+    if len(outputs) == 0:
+        return [] 
+    max_ind = outputs[:, 0].max()
+    if torch.is_tensor(max_ind):
+        max_ind = max_ind.item() 
+    
+    # Iterate over each index in the batch (i.e. result from an image)
+    for i in range(int(max_ind) + 1):
+        output = outputs[outputs[:, 0] == i]
+        pred_boxes = output[:, 3:7]
+        pred_scores = output[:, 2]
+        pred_labels = output[:, 1]
 
         true_positives = np.zeros(pred_boxes.shape[0])
 
-        annotations = targets[targets[:, 0] == sample_i][:, 1:]
+        annotations = targets[targets[:, 0] == i][:, 1:]
         target_labels = annotations[:, 0] if len(annotations) else []
         if len(annotations):
             detected_boxes = []

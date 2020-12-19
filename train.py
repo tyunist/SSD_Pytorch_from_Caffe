@@ -219,7 +219,9 @@ class Trainer(object):
             #   targets[i, 0] is the batch index
             #   targets[i, 1] is the object id index (starting from 1)
             #   targets[i, 2:6] is the object bbox (normalized to [0, 1]), in cx,cy,wh format 
+
             # Convert Darknet format to Pascal format 
+            # targets become [batch_idx, obj_idx, x1, y1, x2, y2]
             targets = darknet_2_pascal_targets(targets)
             imgs    = Variable(imgs.to(self.device), requires_grad=False)
             targets = Variable(targets.to(self.device), requires_grad=False).to(self.device) 

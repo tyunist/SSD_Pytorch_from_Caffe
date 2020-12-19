@@ -72,12 +72,17 @@ class Tester(Detector):
         epoch_loss_c   = 0
         img_paths = []  # Stores image paths
         img_detections = []  # Stores detections for each image index
+        labels    = [] # Stores the label of all samples
+        sample_metrics = []  # List of tuples (TP, confs, pred) 
         for batch_i, (paths, imgs, targets) in enumerate(self.test_dataloader):
-            # Note that targets is (N*num_boxes) x 6 where 
+            print(f"\n--------------batch {batch_i}/{num_batches}---------------")
+            #  Current targets is (N*num_boxes) x 6 where 
             #   targets[i, 0] is the batch index
             #   targets[i, 1] is the object id index (starting from 1)
             #   targets[i, 2:6] is the object bbox (normalized to [0, 1]), in cx,cy,wh format 
+
             # Convert Darknet format to Pascal format 
+            # targets become [batch_idx, obj_idx, x1, y1, x2, y2]
             targets = darknet_2_pascal_targets(targets)
             imgs    = Variable(imgs.to(self.device), requires_grad=False)
             targets = Variable(targets.to(self.device), requires_grad=False) 
@@ -100,7 +105,7 @@ class Tester(Detector):
             avg_inference_time.update(infer_time)
             str2Print="Batch [%d/%d]|Val loss %.4f|Loss_l %.4f|Loss_c %.4f"%\
                 (batch_i, num_batches, loss.item(), loss_l.item(), loss_c.item())
-            print(str2Print)
+            #print(str2Print)
             logging.info(str2Print)
             
             # Visualize image & gt bboxes
@@ -112,33 +117,66 @@ class Tester(Detector):
                 detections = blobs      
             if len(detections.size()) == 1:
                 detections = detections.unsqueeze(0)
+            # detections: N x 7, where the second dim: [batch_i, cls idx, score, x1, y1, x2, y2] 
 
-            # Visualize image & gt bboxes
-            self.visualize_batch(batch_i, imgs, targets, self.tboard_writer, msg='test/gt_batch_')
             
             assert detections.shape[1] == 7, "Detection out must be Nx7. This one is Nx%d"%detections.shape[1]
             neg_mask1 = detections[:, 3:] < 0.
             neg_mask2 = detections[:, 3:] > 1.0 
             detections[:, 3:][neg_mask1] = 0.001 
             detections[:, 3:][neg_mask2] = 0.99 
-            #detections = torch.masked_select(detections, mask1)
-            #detections = torch.masked_select(detections, mask2)
+          
+            # Evaluate each batch using true positive, scores ...
+            #TODO: use iou_threshold given from the file
+            labels += targets[:, 1].tolist()
+            # Note: targets is already N x 6 with bbox in the x1y1x2y2 format
+
+            #sample_metrics += get_batch_statistics(pred_tensor6, targets, iou_threshold=self.model.mbox_loss.threshold)
+            sample_metrics += get_batch_statistics(detections.cpu(), targets.cpu(), iou_threshold=self.model.mbox_loss.threshold)
+
+            # Visualize image & gt bboxes
+            self.visualize_batch(batch_i, imgs, targets, self.tboard_writer, msg='test/gt_batch')
             self.visualize_batch(batch_i, imgs, detections, self.tboard_writer, msg='test/pred_batch')
+            # Store image paths & the detection visualization
             img_paths.append(paths)
             img_detections.append(detections.cpu())
+        
+        # Compute mAP
+        #pdb.set_trace()
+        true_positives, pred_scores, pred_labels = [np.concatenate(x, 0) for x in list(zip(*sample_metrics))]
+        precision, recall, AP, f1, ap_class  = ap_per_class(true_positives, pred_scores, pred_labels, labels)
+        evaluation_metrics = [
+                                (f"test_loss", epoch_val_loss/num_batches),
+                                (f"test_precision", precision.mean()),
+                                (f"test_recall", recall.mean()),
+                                (f"test_mAP", AP.mean()),
+                                (f"test_f1", f1.mean()),
+                            ]
+        self.tboard_writer.list_of_scalars_summary(evaluation_metrics, 0)
+        
+        # Save visualization of detections 
+        self.save_detection_visualization(img_paths, img_detections) 
 
+        
+        # Losses
         epoch_val_loss /= num_batches
         epoch_loss_l   /= num_batches
         epoch_loss_c   /= num_batches
         str2Print="Test loss %.4f|Loss_l %.4f|Loss_c %.4f"%\
             (epoch_val_loss, epoch_loss_l, epoch_loss_c)
-        print("===============================")
-        print(str2Print)
+        #print("===============================")
+        #print(str2Print)
         logging.info("===============================")
         logging.info(str2Print)
         
-        # Save visualization of detections 
-        self.save_detection_visualization(img_paths, img_detections) 
+        
+        # Print class APs and mAP
+        ap_table = [["Index", "Class name", "AP"]]
+        for i, c in enumerate(ap_class):
+            ap_table += [[c, self.class_names[c], "%.5f" % AP[i]]]
+        print(AsciiTable(ap_table).table)
+        print(f"---- mAP {AP.mean()}")
+        
 
             
 if __name__ == "__main__":

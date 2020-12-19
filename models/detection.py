@@ -10,6 +10,9 @@ from torch.autograd import Variable
 import torch.nn.functional as F
 import pdb 
 import time 
+import logging 
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 def point_form(boxes):
     """ Convert prior_boxes to (xmin, ymin, xmax, ymax)
@@ -359,9 +362,10 @@ class Detection(nn.Module):
             output = torch.cat(output, 0) # B x 7
         else:
             output = torch.zeros(1,7)
-        print("------------------------------------------")
-        print(">> Detection_output shape:", output.shape)
-        print("------------------------------------------")
+        logger.info("------------------------------------------")
+        infor_str = f"[INFO]{__file__}:\n\t\t\tDetection output shape: [" + str(output.shape[0]) + ", " + str(output.shape[1]) + "]"
+        logger.info(infor_str)
+        logger.info("------------------------------------------")
         # Debug: output targets 
         #pdb.set_trace()
         #targets: B x 6
@@ -513,6 +517,7 @@ class MultiBoxLoss(nn.Module):
         if(num_pos.sum() > 0):
             loss_c = F.cross_entropy(conf_p, targets_weighted, size_average=False)
         else:
+            logger.warning(f"[WARN]{__file__}:\n \t\t\t\tThere is NO accepted detection! Return infinity!")
             loss_c = torch.tensor(float('inf'))
         # Sum of losses: L(x,c,l,g) = (Lconf(x, c) + ¦Áloc(x,l,g)) / N
 
@@ -520,7 +525,7 @@ class MultiBoxLoss(nn.Module):
         loss_l /= N
         loss_c /= N
         total_loss = (loss_l*self.loss_l_weight + loss_c)/(self.loss_l_weight + 1)
-        print(">>|total Loss %.4f |Loss_l %.4f|Loss_c %.4f"%(total_loss, loss_l, loss_c))
+        logger.info("[INFO]%s:\n\t\t\t|total Loss %.4f |Loss_l %.4f|Loss_c %.4f"%(__file__, total_loss, loss_l, loss_c))
         return {'total_loss':total_loss,\
                 'loss_l':loss_l,\
                 'loss_c':loss_c 

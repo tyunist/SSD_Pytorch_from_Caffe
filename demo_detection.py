@@ -211,6 +211,7 @@ class Detector(object):
             targets N x 6 
         '''    
         if targets.size(1) == 7:
+            # Targets format is: [batch_idx, label_idx, pred_score, x1, y1, x2, y2]
             targets = torch.cat((targets[:,:2], targets[:,3:]) ,1)
         assert targets.size(1) == 6, "Targets must have dimension of Nx6. This targets size Nx%d"%targets.size(1)
 
