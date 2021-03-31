@@ -1,5 +1,5 @@
 python3.7 test.py \
-    --batch_size 2\
+    --batch_size 1\
     --square_make_type pad\
     --checkname TEST_SSD300\
     --test_filelist_file data/three_drones/cleaned_real_test.txt\
