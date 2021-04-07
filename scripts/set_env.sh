@@ -115,5 +115,5 @@ echo "Set TEST_MODEL_DEF as ${TEST_MODEL_DEF}"
 echo "Set PRETRAINED_CKPT as ${PRETRAINED_CKPT}"
 echo "Set DATA_CONFIG as ${DATA_CONFIG}"
 
-#exec $SHELL -i
+exec $SHELL -i
 

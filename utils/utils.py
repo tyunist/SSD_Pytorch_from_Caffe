@@ -9,7 +9,7 @@ from torch.autograd import Variable
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
-
+from copy import deepcopy
 
 def to_cpu(tensor):
     return tensor.detach().cpu()
@@ -161,7 +161,7 @@ def compute_ap(recall, precision):
     # correct AP calculation
     # first append sentinel values at the end
     mrec = np.concatenate(([0.0], recall, [1.0]))
-    mpre = np.concatenate(([0.0], precision, [0.0]))
+    mpre = np.concatenate(([1.0], precision, [0.0]))
 
     # compute the precision envelope
     for i in range(mpre.size - 1, 0, -1):
@@ -202,7 +202,6 @@ def get_batch_statistics(outputs, targets, iou_threshold):
     max_ind = outputs[:, 0].max()
     if torch.is_tensor(max_ind):
         max_ind = max_ind.item() 
-    
     # Iterate over each index in the batch (i.e. result from an image)
     for i in range(int(max_ind) + 1):
         output = outputs[outputs[:, 0] == i]
@@ -214,24 +213,36 @@ def get_batch_statistics(outputs, targets, iou_threshold):
 
         annotations = targets[targets[:, 0] == i][:, 1:]
         target_labels = annotations[:, 0] if len(annotations) else []
-        if len(annotations):
-            detected_boxes = []
+
+        unmatched = [True for _ in range(len(annotations))]
+        if len(annotations) and sum(unmatched) > 0:
             target_boxes = annotations[:, 1:]
 
             for pred_i, (pred_box, pred_label) in enumerate(zip(pred_boxes, pred_labels)):
 
                 # If targets are found break
-                if len(detected_boxes) == len(annotations):
+                if sum(unmatched) == 0: 
                     break
-
                 # Ignore if label is not one of the target labels
                 if pred_label not in target_labels:
                     continue
 
-                iou, box_index = bbox_iou(pred_box.unsqueeze(0), target_boxes).max(0)
-                if iou >= iou_threshold and box_index not in detected_boxes:
+                iou, box_index = bbox_iou(pred_box.unsqueeze(0), target_boxes[unmatched]).max(0)
+                # correct box_index in the original target_boxes
+                unmatched_boxth = 0 
+                for j, val in enumerate(unmatched):
+                    if not val:
+                        continue
+                    if box_index  == unmatched_boxth:
+                        box_index = j
+                        break
+                    unmatched_boxth += 1 
+
+                if iou >= iou_threshold and pred_label == target_labels[box_index]: 
                     true_positives[pred_i] = 1
-                    detected_boxes += [box_index]
+                    # Remove the pred_label from target_labels 
+                    unmatched[box_index] = False
+
         batch_metrics.append([true_positives, pred_scores, pred_labels])
     return batch_metrics
 
