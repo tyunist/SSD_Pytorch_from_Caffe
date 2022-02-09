@@ -8,7 +8,7 @@ Pillow==7.0.0
 tensorflow==2.0.0b1
 tensorflow-addons==0.9.0
 tensorflow-estimator==2.1.0
-tensorflow-gpu==2.1.0
+tensorflow-gpu==2.5.3
 tensorboard==2.1.1
 tb-nightly==1.14.0a20190603
 PyYAML==5.1
